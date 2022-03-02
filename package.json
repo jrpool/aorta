@@ -1,0 +1,26 @@
+{
+  "name": "aorta",
+  "version": "1.0.0",
+  "description": "Automated Opensource Routines for Testing Accessibility",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitw.cvshealth.com/digital/microservices/cvs-a11y/aorta"
+  },
+  "keywords": ["accessibility", "a11y", "testing"],
+  "author": "Jonathan Pool <jonathan.pool@cvshealth.com>",
+  "license": "none",
+  "bugs": {
+    "url": "https://gitw.cvshealth.com/digital/microservices/cvs-a11y/aorta/-/issues"
+  },
+  "homepage": "https://gitw.cvshealth.com/digital/microservices/cvs-a11y/aorta",
+  "dependencies": {
+    "testaro": "*"
+  },
+  "devDependencies": {
+    "eslint": "*"
+  }
+}
