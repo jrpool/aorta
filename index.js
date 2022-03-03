@@ -11,6 +11,8 @@ const fs = require('fs/promises');
 const testaro = require('testaro');
 // Module to create a web server.
 const http = require('http');
+// Module to parse request bodies.
+const {parse} = require('querystring');
 
 // ########## GLOBAL CONSTANTS
 
@@ -121,18 +123,22 @@ const requestHandler = (request, response) => {
       // If the requested resource is the home page:
       if (['/aorta', '/aorta/index.html'].includes(requestURL)) {
         // Add the page parameters to the query.
-        const scriptNames = fs.readdirSync('scripts');
-        const batchNames = fs.readdirSync('batches');
-        query.scriptListSize = scriptNames.length;
-        query.batchListSize = batchNames.length;
-        query.scriptOptions = scriptNames.map(
-          scriptName => `<option>${scriptName.slice(0, -5)}</option>`
-        ).join('\n');
-        query.batchOptions = batchNames.map(
-          batchName => `<option>${batchName.slice(0, -5)}</option>`
-        ).join('\n');
-        // Serve the page.
-        render('index', query, response);
+        fs.readdir('scripts')
+        .then(scriptNames => {
+          fs.readdir('batches')
+          .then(batchNames => {
+            query.scriptListSize = scriptNames.length;
+            query.batchListSize = batchNames.length;
+            query.scriptOptions = scriptNames.map(
+              scriptName => `<option>${scriptName.slice(0, -5)}</option>`
+            ).join('\n');
+            query.batchOptions = batchNames.map(
+              batchName => `<option>${batchName.slice(0, -5)}</option>`
+            ).join('\n');
+            // Serve the page.
+            render('index', query, response);
+          });
+        });
       }
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
@@ -165,17 +171,24 @@ const requestHandler = (request, response) => {
         // Fulfill the specifications.
         const log = [];
         const reports = [];
-        const scriptJSON = fs.readFileSync(`scripts/${scriptName}.json`);
-        const options = {
-          log,
-          reports,
-          script: `${__readdir}/scripts/${scriptName}.json`
-        };
-        if (batchName) {
-          options.batch = `${__readdir}/batches/${batchName}.json`;
-        }
-        const {handleRequest} = testaro;
-        handleRequest(options);
+        fs.readFile(`scripts/${scriptName}.json`)
+        .then(scriptJSON => {
+          const script = JSON.parse(scriptJSON);
+          const options = {
+            log,
+            reports,
+            script
+          };
+          if (batchName) {
+            fs.readFile(`batches/${batchName}`)
+            .then(batchJSON => {
+              const batch = JSON.parse(batchJSON);
+              options.batch = batch;
+            });
+          }
+          const {handleRequest} = testaro;
+          handleRequest(options);
+        });
       }
       // Otherwise, i.e. if the form is invalid:
       else {

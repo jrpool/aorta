@@ -1,0 +1,10 @@
+# Dependency directories
+node_modules/
+
+# System files
+.DS_Store
+
+# Development configurations
+.vscode/
+.eslintrc.json
+.npmrc
