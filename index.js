@@ -101,7 +101,7 @@ const serveIcon = response => {
 
 // ==== REQUEST-PROCESSING UTILITIES ====
 
-// Handles requests, serving the request page and the acknowledgement page.
+// Handles requests.
 const requestHandler = (request, response) => {
   const {method} = request;
   const bodyParts = [];
@@ -120,6 +120,17 @@ const requestHandler = (request, response) => {
     if (method === 'GET') {
       // If the requested resource is the home page:
       if (['/aorta', '/aorta/index.html'].includes(requestURL)) {
+        // Add the page parameters to the query.
+        const scriptNames = fs.readdirSync('scripts');
+        const batchNames = fs.readdirSync('batches');
+        query.scriptListSize = scriptNames.length;
+        query.batchListSize = batchNames.length;
+        query.scriptOptions = scriptNames.map(
+          scriptName => `<option>${scriptName.slice(0, -5)}</option>`
+        ).join('\n');
+        query.batchOptions = batchNames.map(
+          batchName => `<option>${batchName.slice(0, -5)}</option>`
+        ).join('\n');
         // Serve the page.
         render('index', query, response);
       }
@@ -148,16 +159,20 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
-      const {script, batch} = bodyObject;
-      // If the form is valid:
-      if (requestURL === '/aorta' && script) {
+      const {scriptName, batchName} = bodyObject;
+      // If the form is the home-page form and is valid:
+      if (requestURL === '/aorta' && scriptName) {
         // Fulfill the specifications.
+        const log = [];
+        const reports = [];
+        const scriptJSON = fs.readFileSync(`scripts/${scriptName}.json`);
         const options = {
-          reports: `${__readdir}/reports`,
-          script: `${__readdir}/scripts/${script}.json`
+          log,
+          reports,
+          script: `${__readdir}/scripts/${scriptName}.json`
         };
-        if (batch) {
-          options.batch = `${__readdir}/batches/${batch}.json`;
+        if (batchName) {
+          options.batch = `${__readdir}/batches/${batchName}.json`;
         }
         const {handleRequest} = testaro;
         handleRequest(options);
