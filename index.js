@@ -134,7 +134,7 @@ const requestHandler = (request, response) => {
         serveScript('script.js', response);
       }
       // Otherwise, if it is the site icon:
-      else if (requestURL === '/aorta/favicon.ico') {
+      else if (requestURL === '/aorta/favicon.png') {
         // Serve it.
         serveIcon(response);
       }

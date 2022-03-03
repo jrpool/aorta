@@ -2,66 +2,29 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <title>RallyScore</title>
-    <meta name="description" content="Automation of CVS Health accessibility scoring in Rally">
+    <title>AORTA</title>
+    <meta name="description" content="Automated Opensource Routines for Testing Accessibility (AORTA)">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/rallyscore/style.css">
-    <link rel="icon" href="/rallyscore/favicon.ico">
-    <script defer src="/rallyscore/script.js"></script>
+    <link rel="stylesheet" href="/aorta/style.css">
+    <link rel="icon" href="/aorta/favicon.png">
   </head>
   <body class="home">
     <main>
-      <h1>RallyScore</h1>
-      <p>RallyScore computes the current accessibility score of a Rally test plan if all of its test cases have been run.</p>
+      <h1>AORTA</h1>
+      <p>AORTA: Automated Opensource Routines for Testing Accessibility.</p>
       <section>
-        <form
-          action="/rallyscore"
-          method="post"
-          class="flex"
-        >
-        <section class="odd">
-          <h2>Your Rally credentials</h2>
-          <p>
-            <label>
-              <span class="label">
-                User name (an email address):
-              </span>
-              <br>
-              <input
-                type="email"
-                name="username"
-                size="60"
-                maxwidth="60"
-              >
-            </label>
-          </p>
-          <p>
-            <label>
-              <span class="label">Password:</span>
-              <br>
-              <input
-                type="password"
-                name="password"
-                size="30"
-                maxwidth="30"
-              >
-            </label>
-          </p>
-        </section>
-        <section class="even">
-            <h2>Tree root</h2>
+        <form action="/aorta" method="post" class="flex">
+          <section class="odd">
+            <h2>Tell AORTA what to do</h2>
+            <p><label for="scriptName">Script</label></p>
+            <select id="scriptName" name="scriptName" size="__scriptSize__">
+              __scriptNames__
+            </select>
             <p>
-              <label>
-                <span class="label">
-                  <strong>ID</strong> of the user story at the root of the tree:
-                </span>
-                <input
-                  name="rootID"
-                  size="12"
-                  maxlength="9"
-                >
-              </label>
-            </p>
+            <p><label for="batchName">Batch</label></p>
+            <select id="batchName" name="batchName" size="__batchSize__">
+              __batchNames__
+            </select>
           </section>
           <p><button>Submit</button></p>
         </form>
