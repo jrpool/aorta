@@ -171,6 +171,7 @@ const requestHandler = (request, response) => {
         // Make Testaro perform the specified commands.
         const log = [];
         const reports = [];
+        const {handleRequest} = testaro;
         fs.readFile(`scripts/${scriptName}.json`)
         .then(async scriptJSON => {
           const script = JSON.parse(scriptJSON);
@@ -184,10 +185,12 @@ const requestHandler = (request, response) => {
             .then(batchJSON => {
               const batch = JSON.parse(batchJSON);
               options.batch = batch;
+              await handleRequest(options);
             });
           }
-          const {handleRequest} = testaro;
-          await handleRequest(options);
+          else {
+            await handleRequest(options);
+          }
           // Serve the result.
           for (const message of log) {
             await response.write(JSON.stringify(message, null, 2));
