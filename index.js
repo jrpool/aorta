@@ -104,7 +104,7 @@ const serveIcon = response => {
 // ==== REQUEST-PROCESSING UTILITIES ====
 
 // Handles requests.
-const requestHandler = (request, response) => {
+const requestHandler = async (request, response) => {
   const {method} = request;
   const bodyParts = [];
   request.on('error', err => {
@@ -168,7 +168,7 @@ const requestHandler = (request, response) => {
       const {scriptName, batchName} = bodyObject;
       // If the form is the home-page form and is valid:
       if (requestURL === '/aorta' && scriptName) {
-        // Fulfill the specifications.
+        // Make Testaro perform the specified commands.
         const log = [];
         const reports = [];
         fs.readFile(`scripts/${scriptName}.json`)
@@ -187,7 +187,15 @@ const requestHandler = (request, response) => {
             });
           }
           const {handleRequest} = testaro;
-          handleRequest(options);
+          await handleRequest(options);
+          // Serve the result.
+          for (const message of log) {
+            await response.write(message);
+          };
+          for (const report of reports) {
+            await response.write(JSON.stringify(report, null, 2));
+          };
+          response.end();
         });
       }
       // Otherwise, i.e. if the form is invalid:
