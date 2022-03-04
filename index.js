@@ -104,7 +104,7 @@ const serveIcon = response => {
 // ==== REQUEST-PROCESSING UTILITIES ====
 
 // Handles requests.
-const requestHandler = async (request, response) => {
+const requestHandler = (request, response) => {
   const {method} = request;
   const bodyParts = [];
   request.on('error', err => {
@@ -172,7 +172,7 @@ const requestHandler = async (request, response) => {
         const log = [];
         const reports = [];
         fs.readFile(`scripts/${scriptName}.json`)
-        .then(scriptJSON => {
+        .then(async scriptJSON => {
           const script = JSON.parse(scriptJSON);
           const options = {
             log,

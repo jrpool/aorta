@@ -18,7 +18,7 @@
   },
   "homepage": "https://gitw.cvshealth.com/digital/microservices/cvs-a11y/aorta",
   "dependencies": {
-    "testaro": "*"
+    "testaro": ">=2.0.1"
   },
   "devDependencies": {
     "eslint": "*"
