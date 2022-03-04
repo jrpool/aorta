@@ -8,7 +8,7 @@
 // Module to access files.
 const fs = require('fs/promises');
 // Module to perform accessibility tests.
-const testaro = require('../testaro');
+const testaro = require('testaro');
 // Module to create a web server.
 const http = require('http');
 // Module to parse request bodies.
@@ -103,6 +103,20 @@ const serveIcon = response => {
 
 // ==== REQUEST-PROCESSING UTILITIES ====
 
+// Asks Testaro to process a script.
+const getTestaroResult = async (handleRequest, response, options) => {
+  await handleRequest(options);
+  response.write('LOG\n\n');
+  for (const message of options.log) {
+    await response.write(`${JSON.stringify(message, null, 2)}\n`);
+  };
+  for (const reportIndex in options.reports) {
+    await response.write(
+      `\n\nREPORT ${reportIndex}\n\n${JSON.stringify(options.reports[reportIndex], null, 2)}\n`
+    );
+  };
+  response.end();
+};
 // Handles requests.
 const requestHandler = (request, response) => {
   const {method} = request;
@@ -132,9 +146,9 @@ const requestHandler = (request, response) => {
             query.scriptOptions = scriptNames.map(
               scriptName => `<option>${scriptName.slice(0, -5)}</option>`
             ).join('\n');
-            batchLabels = batchNames.map(batchName => `<option>${batchName.slice(0, -5)}</option>`);
-            batchLabels.unshift('<option>None</option>');
-            query.batchNames = batchLabels.join('\n');
+            batchOptions = batchNames.map(batchName => `<option>${batchName.slice(0, -5)}</option>`);
+            batchOptions.unshift('<option>None</option>');
+            query.batchOptions = batchOptions.join('\n');
             // Serve the page.
             render('index', query, response);
           });
@@ -180,33 +194,16 @@ const requestHandler = (request, response) => {
             reports,
             script
           };
-          if (batchName) {
+          if (batchName !== 'None') {
             fs.readFile(`batches/${batchName}.json`)
             .then(async batchJSON => {
               const batch = JSON.parse(batchJSON);
               options.batch = batch;
-              await handleRequest(options);
-              response.write('LOG\n\n');
-              for (const message of options.log) {
-                await response.write(`${JSON.stringify(message, null, 2)}\n`);
-              };
-              for (const reportIndex in options.reports) {
-                await response.write(
-                  `\n\nREPORT ${reportIndex}\n\n${JSON.stringify(options.reports[reportIndex], null, 2)}\n`
-                );
-              };
-              response.end();
+              await getTestaroResult(handleRequest, response, options);
             });
           }
           else {
-            await handleRequest(options);
-            for (const message of options.log) {
-              await response.write(JSON.stringify(message, null, 2));
-            };
-            for (const report of options.reports) {
-              await response.write(JSON.stringify(report, null, 2));
-            };
-            response.end();
+            await getTestaroResult(handleRequest, response, options);
           }
           // Serve the result.
         });

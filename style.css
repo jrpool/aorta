@@ -77,6 +77,9 @@ input, select {
   margin: 0.5rem 0;
   font-size: inherit;
 }
+label {
+  font-weight: 700;
+}
 label.vertical {
   display: flex;
   flex-direction: column;
