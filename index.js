@@ -182,7 +182,7 @@ const requestHandler = (request, response) => {
           };
           if (batchName) {
             fs.readFile(`batches/${batchName}.json`)
-            .then(batchJSON => {
+            .then(async batchJSON => {
               const batch = JSON.parse(batchJSON);
               options.batch = batch;
               await handleRequest(options);
