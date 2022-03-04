@@ -128,13 +128,13 @@ const requestHandler = (request, response) => {
           fs.readdir('batches')
           .then(batchNames => {
             query.scriptListSize = scriptNames.length;
-            query.batchListSize = batchNames.length;
+            query.batchListSize = batchNames.length + 1;
             query.scriptOptions = scriptNames.map(
               scriptName => `<option>${scriptName.slice(0, -5)}</option>`
             ).join('\n');
-            query.batchOptions = batchNames.map(
-              batchName => `<option>${batchName.slice(0, -5)}</option>`
-            ).join('\n');
+            batchLabels = batchNames.map(batchName => `<option>${batchName.slice(0, -5)}</option>`);
+            batchLabels.unshift(<option>None</option>);
+            query.batchNames = batchLabels.join('\n');
             // Serve the page.
             render('index', query, response);
           });

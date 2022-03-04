@@ -3,24 +3,23 @@
   outline-offset: 0.2rem;
 }
 body {
-  margin: 2rem 0;
+  margin: 2rem;
   font-size: large;
 }
 button {
   min-height: 44px;
   min-width: 44px;
   padding: 0.5rem;
-  border: solid 0.2rem #c00;
+  border: solid 0.2rem #03a;
   border-radius: 1rem;
   font-size: inherit;
   font-weight: 700;
   color: #fff;
-  background-color: #c00;
+  background-color: #03a;
 }
 button:hover {
   color: #000;
-  border: solid 0.2rem #000;
-  background-color: #fff;
+  background-color: #9df;
 }
 caption {
   margin: 1rem 0;
@@ -54,11 +53,8 @@ figure > img {
 form {
   margin-top: 1rem;
 }
-h1 {
-  padding-left: 2rem;
-}
 h2 {
-  margin: 1rem 0 0.5rem 0;
+  margin: 1rem auto 0.5rem auto;
   color: #006666;
 }
 section:not(.wide) {
@@ -103,7 +99,7 @@ ol > li {
   margin: 1rem 0;
 }
 p {
-  margin: 0.5rem 0 0.25rem 0;
+  margin: 0.5rem auto 0.25rem auto;
 }
 pre {
   margin-left: 2rem;
