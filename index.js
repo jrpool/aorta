@@ -190,7 +190,7 @@ const requestHandler = (request, response) => {
           await handleRequest(options);
           // Serve the result.
           for (const message of log) {
-            await response.write(message);
+            await response.write(JSON.stringify(message, null, 2));
           };
           for (const report of reports) {
             await response.write(JSON.stringify(report, null, 2));
