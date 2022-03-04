@@ -133,7 +133,7 @@ const requestHandler = (request, response) => {
               scriptName => `<option>${scriptName.slice(0, -5)}</option>`
             ).join('\n');
             batchLabels = batchNames.map(batchName => `<option>${batchName.slice(0, -5)}</option>`);
-            batchLabels.unshift(<option>None</option>);
+            batchLabels.unshift('<option>None</option>');
             query.batchNames = batchLabels.join('\n');
             // Serve the page.
             render('index', query, response);
