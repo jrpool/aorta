@@ -8,7 +8,7 @@
 // Module to access files.
 const fs = require('fs/promises');
 // Module to perform accessibility tests.
-const testaro = require('testaro');
+const testaro = require('../testaro');
 // Module to create a web server.
 const http = require('http');
 // Module to parse request bodies.
@@ -186,19 +186,29 @@ const requestHandler = (request, response) => {
               const batch = JSON.parse(batchJSON);
               options.batch = batch;
               await handleRequest(options);
+              response.write('LOG\n\n');
+              for (const message of options.log) {
+                await response.write(`${JSON.stringify(message, null, 2)}\n`);
+              };
+              for (const reportIndex in options.reports) {
+                await response.write(
+                  `\n\nREPORT ${reportIndex}\n\n${JSON.stringify(options.reports[reportIndex], null, 2)}\n`
+                );
+              };
+              response.end();
             });
           }
           else {
             await handleRequest(options);
+            for (const message of options.log) {
+              await response.write(JSON.stringify(message, null, 2));
+            };
+            for (const report of options.reports) {
+              await response.write(JSON.stringify(report, null, 2));
+            };
+            response.end();
           }
           // Serve the result.
-          for (const message of log) {
-            await response.write(JSON.stringify(message, null, 2));
-          };
-          for (const report of reports) {
-            await response.write(JSON.stringify(report, null, 2));
-          };
-          response.end();
         });
       }
       // Otherwise, i.e. if the form is invalid:
