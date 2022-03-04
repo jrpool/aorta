@@ -180,7 +180,7 @@ const requestHandler = (request, response) => {
             script
           };
           if (batchName) {
-            fs.readFile(`batches/${batchName}`)
+            fs.readFile(`batches/${batchName}.json`)
             .then(batchJSON => {
               const batch = JSON.parse(batchJSON);
               options.batch = batch;
