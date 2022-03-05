@@ -14,3 +14,21 @@ The direct and indirect dependencies include some hosted by `npmjs` and others h
 //registry.npmjs.org/:_authToken=...
 //npm.pkg.github.com/:_authToken=ghp_...
 ```
+
+AORTA con be configured with some environment variables. If you wish to use them and have no other mechanism for doing so, you can add an `.env.js` file to the project’s root directory with this format:
+
+```javascript
+exports.env = {
+  'HOST': 'abc',
+  'PORT': 3005,
+  'PROTOCOL': 'def',
+  'KEY': '/ghi.key',
+  'CERT': '/jkl.crt'
+}
+```
+
+In this example, replace:
+- `abc` with `localhost` or a server URL
+- `def` with `http2`, `https`, or `http`
+- `ghi` with the path to a private SSH key file
+- `jkl` with the path to an SSH certificate file
