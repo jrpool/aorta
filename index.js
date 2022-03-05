@@ -11,12 +11,13 @@ const {readFileSync} = require('fs');
 // Module to perform accessibility tests.
 const testaro = require('testaro');
 // Secrets
-const {env} = require('./.env');
-if (env){
+try {
+  const {env} = require('./.env');
   Object.keys(env).forEach(key => {
     process.env[key] = env[key];
   });
 }
+catch(error) {};
 // Module to create a web server.
 const protocolName = process.env.PROTOCOL || 'http2';
 const protocol = require(protocolName);
