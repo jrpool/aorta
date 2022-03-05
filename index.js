@@ -5,14 +5,14 @@
 
 // ########## IMPORTS
 
-// Module to access files.
+// Modules to access files.
 const fs = require('fs/promises');
+const {readFileSync} = require('fs');
 // Module to perform accessibility tests.
 const testaro = require('testaro');
 // Secrets
-const envJSON = await fs.readFile('.env.json', 'utf8');
-if (envJSON){
-  const env = JSON.parse(envJSON);
+const {env} = require('./.env');
+if (env){
   Object.keys(env).forEach(key => {
     process.env[key] = env[key];
   });
@@ -225,17 +225,22 @@ const requestHandler = (request, response) => {
       err('Unanticipated request method', 'in AORTA', response);
     }
   });
+  request.on('close', () => {
+    response.end();
+  });
 };
 
 // ########## SERVER
 
 const serverOptions = {};
+let creator = 'createServer';
 if (protocolName === 'http2') {
-  serverOptions.key = process.env.KEY;
-  serverOptions.cert = process.env.CERT;
+  serverOptions.key = readFileSync(process.env.KEY, 'utf8');
+  serverOptions.cert = readFileSync(process.env.CERT,'utf8');
   serverOptions.allowHTTP1 = true;
+  creator = 'createSecureServer';
 }
-const server = protocol.createServer(serverOptions, requestHandler);
+const server = protocol[creator](serverOptions, requestHandler);
 
 const serve = () => {
   // Environment variables are defined in Dockerfile.
@@ -248,6 +253,7 @@ const serve = () => {
 };
 
 serve();
+console.log('Server started');
 
 // ########## PLATFORM
 
@@ -256,12 +262,9 @@ serve();
  *
  */
  function shutdownNode() {
-
-  console.log('Shutting down Node.');
+  console.log('\nShutting down Node.');
   // Perform any cleanup.
-  server.close(() => {
-    process.exit(0);
-  });
+  process.exit(0);
 }
 /**
 * @description Handle unhandled exceptions in the code.
