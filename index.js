@@ -10,7 +10,8 @@ const fs = require('fs/promises');
 // Module to perform accessibility tests.
 const testaro = require('testaro');
 // Module to create a web server.
-const protocol = require(process.env.PROTOCOL || 'https');
+const protocolName = process.env.PROTOCOL || 'https';
+const protocol = require(protocolName);
 // Module to parse request bodies.
 const {parse} = require('querystring');
 
@@ -226,7 +227,7 @@ const serve = () => {
   // Environment variables are defined in Dockerfile.
   const port = process.env.PORT || '3005';
   server.listen(port, () => {
-    console.log(`AORTA server listening at ${protocol}://localhost:${port}.`);
+    console.log(`AORTA server listening at ${protocolName}://localhost:${port}/aorta.`);
   });
 };
 
