@@ -8,8 +8,9 @@ This application tests web pages for accessibility. It asks you for the pages yo
 
 ## Installation
 
-Installation of the dependencies requires an `.npmrc` file in the project directory, containing this line:
+The direct and indirect dependencies include some hosted by `npmjs` and others hosted by Github Packages. So, installing the dependencies (`npm install`) requires you to have personal access tokens from both registries. Put them into an `.npmrc` file, which can be in your home directory. The statements in `.npmrc` have this format:
 
 ```bash
-@siteimprove:registry=https://npm.pkg.github.com
+//registry.npmjs.org/:_authToken=...
+//npm.pkg.github.com/:_authToken=ghp_...
 ```
