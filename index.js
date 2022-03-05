@@ -10,7 +10,7 @@ const fs = require('fs/promises');
 // Module to perform accessibility tests.
 const testaro = require('testaro');
 // Module to create a web server.
-const protocolName = process.env.PROTOCOL || 'https';
+const protocolName = process.env.PROTOCOL || 'http2';
 const protocol = require(protocolName);
 // Module to parse request bodies.
 const {parse} = require('querystring');
