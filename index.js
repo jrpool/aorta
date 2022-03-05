@@ -9,6 +9,14 @@
 const fs = require('fs/promises');
 // Module to perform accessibility tests.
 const testaro = require('testaro');
+// Secrets
+const envJSON = await fs.readFile('.env.json', 'utf8');
+if (envJSON){
+  const env = JSON.parse(envJSON);
+  Object.keys(env).forEach(key => {
+    process.env[key] = env[key];
+  });
+}
 // Module to create a web server.
 const protocolName = process.env.PROTOCOL || 'http2';
 const protocol = require(protocolName);
@@ -221,13 +229,21 @@ const requestHandler = (request, response) => {
 
 // ########## SERVER
 
-const server = protocol.createServer({}, requestHandler);
+const serverOptions = {};
+if (protocolName === 'http2') {
+  serverOptions.key = process.env.KEY;
+  serverOptions.cert = process.env.CERT;
+  serverOptions.allowHTTP1 = true;
+}
+const server = protocol.createServer(serverOptions, requestHandler);
 
 const serve = () => {
   // Environment variables are defined in Dockerfile.
   const port = process.env.PORT || '3005';
   server.listen(port, () => {
-    console.log(`AORTA server listening at ${protocolName}://localhost:${port}/aorta.`);
+    console.log(
+      `Server listening at ${protocolName}://${process.env.HOST || 'localhost'}:${port}/aorta.`
+    );
   });
 };
 
