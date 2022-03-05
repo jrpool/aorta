@@ -10,13 +10,9 @@ const fs = require('fs/promises');
 // Module to perform accessibility tests.
 const testaro = require('testaro');
 // Module to create a web server.
-const http = require('http');
+const protocol = require(process.env.PROTOCOL || 'https');
 // Module to parse request bodies.
 const {parse} = require('querystring');
-
-// ########## GLOBAL CONSTANTS
-
-const protocol = 'http';
 
 // ########## FUNCTIONS
 
@@ -224,7 +220,7 @@ const requestHandler = (request, response) => {
 
 // ########## SERVER
 
-const server = http.createServer({}, requestHandler);
+const server = protocol.createServer({}, requestHandler);
 
 const serve = () => {
   // Environment variables are defined in Dockerfile.
