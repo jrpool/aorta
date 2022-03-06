@@ -7,7 +7,6 @@ node_modules/
 # Development configurations
 .vscode/
 .eslintrc.json
-.npmrc
 
 # Secrets
 .env.js
