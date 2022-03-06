@@ -1,6 +1,6 @@
 /*
   index.js
-  AORTA main script.
+  Aorta main script.
 */
 
 // ########## IMPORTS
@@ -8,9 +8,7 @@
 // Modules to access files.
 const fs = require('fs/promises');
 const {readFileSync} = require('fs');
-// Module to perform accessibility tests.
-const testaro = require('testaro');
-// Secrets
+// Environment variables
 try {
   const {env} = require('./.env');
   Object.keys(env).forEach(key => {
@@ -20,7 +18,7 @@ try {
 catch(error) {};
 // Module to create a web server.
 const protocolName = process.env.PROTOCOL || 'http2';
-const protocol = require(protocolName);
+const protocolServer = require(protocolName);
 // Module to parse request bodies.
 const {parse} = require('querystring');
 
@@ -109,19 +107,37 @@ const serveIcon = response => {
 
 // ==== REQUEST-PROCESSING UTILITIES ====
 
-// Asks Testaro to process a script.
-const getTestaroResult = async (handleRequest, response, options) => {
-  await handleRequest(options);
-  response.write('LOG\n\n');
-  for (const message of options.log) {
-    await response.write(`${JSON.stringify(message, null, 2)}\n`);
-  };
-  for (const reportIndex in options.reports) {
-    await response.write(
-      `\n\nREPORT ${reportIndex}\n\n${JSON.stringify(options.reports[reportIndex], null, 2)}\n`
-    );
-  };
-  response.end();
+// Returns an order description.
+const orderSpecs = order => `script ${order.scriptName}, batch ${order.batchName}`;
+// Adds the orders, jobs, or testers to a query.
+const addItems = async (query, itemType, isSelect) => {
+  let size, key;
+  let assignment = '';
+  if (itemType === 'order') {
+    size = 'orderListSize';
+    key = 'orders';
+    specs = item => orderSpecs(item);
+  }
+  else if (itemType === 'job') {
+    size = 'jobListSize';
+    key = 'jobs';
+    assignment = item => ` assigned to ${item.tester}`;
+  }
+  else if (itemType = 'tester') {
+    size = 'testerListSize';
+    key = 'testers';
+  }
+  const items = await fs.readdir(`.data/${key}`);
+  query[size] = items.length;
+  query[key] = items.map(item => {
+    if (isSelect) {
+      return `<option value="${order.id}">${item.id}: ${orderSpecs(item)}</li>`
+    }
+    else {
+      return `<li>${item.id}${assignment}: ${orderSpecs(item)}</li>`;
+    }
+  })
+  .join('\n');
 };
 // Handles requests.
 const requestHandler = (request, response) => {
@@ -141,7 +157,12 @@ const requestHandler = (request, response) => {
     // METHOD GET: If the request requests a resource:
     if (method === 'GET') {
       // If the requested resource is the home page:
-      if (['/aorta', '/aorta/index.html'].includes(requestURL)) {
+      if (requestURL === '/aorta') {
+        // Serve the page.
+        render('index', {}, response);
+      }
+      // Otherwise, if it is the ordering page:
+      else if (requestURL === '/aorta/order') {
         // Add the page parameters to the query.
         fs.readdir('scripts')
         .then(scriptNames => {
@@ -156,9 +177,24 @@ const requestHandler = (request, response) => {
             batchOptions.unshift('<option>None</option>');
             query.batchOptions = batchOptions.join('\n');
             // Serve the page.
-            render('index', query, response);
+            render('order', query, response);
           });
         });
+      }
+      // Otherwise, if it is the orders page:
+      else if (requestURL === '/aorta/orders') {
+        // Add the page parameters to the query.
+        addOrders(query, false, false);
+        addOrders(query, true, false);
+        // Serve the page.
+        render('orders', query, response);
+      }
+      // Otherwise, if it is the assignment page:
+      else if (requestURL === '/aorta/assign') {
+        // Add the page parameters to the query.
+        addOrders(query, false, true);
+        // Serve the page.
+        render('orders', query, response);
       }
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
@@ -241,7 +277,7 @@ if (protocolName === 'http2') {
   serverOptions.allowHTTP1 = true;
   creator = 'createSecureServer';
 }
-const server = protocol[creator](serverOptions, requestHandler);
+const server = protocolServer[creator](serverOptions, requestHandler);
 
 const serve = () => {
   // Environment variables are defined in Dockerfile.

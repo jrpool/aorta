@@ -2,33 +2,26 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <title>AORTA</title>
-    <meta name="description" content="Automated Opensource Routines for Testing Accessibility (AORTA)">
+    <title>Aorta</title>
+    <meta name="description" content="Automated Order Router for Tests of Accessibility (Aorta)">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/aorta/style.css">
     <link rel="icon" href="/aorta/favicon.png">
   </head>
-  <body class="home">
+  <body>
     <main>
-      <h1>AORTA</h1>
-      <p>AORTA: Automated Opensource Routines for Testing Accessibility.</p>
-      <section>
-        <form action="/aorta" method="post" class="flex">
-          <section class="odd">
-            <h2>Tell AORTA what to do</h2>
-            <p><label for="scriptName">Script</label></p>
-            <select id="scriptName" name="scriptName" size="__scriptListSize__">
-              __scriptOptions__
-            </select>
-            <p>
-            <p><label for="batchName">Batch</label></p>
-            <select id="batchName" name="batchName" size="__batchListSize__">
-              __batchOptions__
-            </select>
-          </section>
-          <p><button>Submit</button></p>
-        </form>
-      </section>
+      <h1>Aorta</h1>
+      <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
+      <p>Aorta receives, routes, and reports on orders for accessibility tests.</p>
+      <p>If you are authorized, you can:</p>
+      <ol>
+        <li><a href="/aorta/order">Submit an order</a></li>
+        <li><a href="/aorta/orders">See the orders</a></li>
+        <li><a href="/aorta/assign">Assign an order</a> to a tester</li>
+        <li>Perform an ordered job</li>
+        <li><a href="/aorta/readMine">Read your orders&rsquo; results</a></li>
+        <li><a href="/aorta/readAll">Read all results</a></li>
+      </ol>
     </main>
   </body>
 </html>
