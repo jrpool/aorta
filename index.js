@@ -111,30 +111,35 @@ const serveIcon = response => {
 const orderSpecs = order => `script ${order.scriptName}, batch ${order.batchName}`;
 // Adds the orders, jobs, or testers to a query.
 const addItems = async (query, itemType, isSelect) => {
-  let size, key;
+  let size, key, dir, specs;
   if (itemType === 'order') {
     size = 'orderListSize';
     key = 'orders';
+    dir = 'orders';
     specs = item => orderSpecs(item);
   }
   else if (itemType === 'job') {
     size = 'jobListSize';
     key = 'jobs';
+    dir = 'jobs';
     specs = item => `${orderSpecs(item)}, tester ${item.tester}`;
   }
   else if (itemType = 'tester') {
     size = 'testerListSize';
     key = 'testers';
+    dir = 'users';
     specs = item => `${item.id}: ${item.name}`;
   }
   const itemNames = await fs.readdir(`.data/${key}`);
-  const itemJSONs = [];
-  for (const itemName of itemNames) {
-    itemJSONs.push(await fs.readFile(`.data/${key}/${itemName}`));
-  }
   query[size] = itemJSONs.length;
-  query[key] = itemJSONs.map(itemJSON => {
+  let items = [];
+  for (const itemName of itemNames) {
+    const itemJSON = await fs.readFile(`.data/${dir}/${itemName}`);
     const item = JSON.parse(itemJSON);
+    item.isValid = key === 'testers' ? item.roles.includes('test') : true;
+    items.push(item);
+  }
+  query[key] = items.filter(item => item.isValid).map(item => {
     if (isSelect) {
       return `<option value="${item.id}">${item.id}: ${specs(item)}</li>`
     }
@@ -240,9 +245,9 @@ const requestHandler = (request, response) => {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
       const {scriptName, batchName} = bodyObject;
-      // If the form is the home-page form and is valid:
-      if (requestURL === '/aorta' && scriptName) {
-        // Make Testaro perform the specified commands.
+      // If the form submits an order and is valid:
+      if (requestURL === '/aorta/order' && scriptName && userName && authCode) {
+        // If the user is authorized to submit an order:
         const log = [];
         const reports = [];
         const {handleRequest} = testaro;
@@ -271,13 +276,13 @@ const requestHandler = (request, response) => {
       // Otherwise, i.e. if the form is invalid:
       else {
         // Serve an error page.
-        err('Invalid request submitted', 'in AORTA', response);
+        err('Invalid request submitted', 'in Aorta', response);
       }
     }
     // Otherwise, i.e. if the method is invalid:
     else {
       // Serve an error page.
-      err('Unanticipated request method', 'in AORTA', response);
+      err('Unanticipated request method', 'in Aorta', response);
     }
   });
   request.on('close', () => {
@@ -296,8 +301,7 @@ if (protocolName === 'http2') {
   creator = 'createSecureServer';
 }
 const server = protocolServer[creator](serverOptions, requestHandler);
-
-const serve = () => {
+const serve = async () => {
   // Environment variables are defined in Dockerfile.
   const port = process.env.PORT || '3005';
   server.listen(port, () => {
@@ -305,10 +309,10 @@ const serve = () => {
       `Server listening at ${protocolName}://${process.env.HOST || 'localhost'}:${port}/aorta.`
     );
   });
+  const userIDs = fs.readdir('')
 };
-
+// Start the server.
 serve();
-console.log('Server started');
 
 // ########## PLATFORM
 
