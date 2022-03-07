@@ -149,6 +149,29 @@ const addItems = async (query, itemType, isSelect) => {
   })
   .join('\n');
 };
+// Validates a user.
+const userOK = async (userName, authCode, role) => {
+  const userFileNames = await fs.readdir('.data/users');
+  const userIndex = userFileNames.findIndex(fileName.slice(0, -5) === userName);
+  if (userIndex > -1) {
+    const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
+    const user = JSON.parse(userJSON);
+    return user.authCode === authCode && (! role || user.roles.includes(role));
+  }
+  else {
+    return false;
+  }
+};
+// Writes an order.
+const writeOrder = async (userName, options) => {
+  const timeStamp = Math.floor((Date.now() - Date.UTC(2022, 1)) / 100).toString(36);
+  const data = {
+    userName,
+    script: options.script,
+    batch: options.batch
+  };
+  await fs.writeFile(`.data/orders/${timeStamp}.json`, JSON.stringify(data, null, 2));
+};
 // Handles requests.
 const requestHandler = (request, response) => {
   const {method} = request;
@@ -244,34 +267,36 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
-      const {scriptName, batchName} = bodyObject;
+      const {scriptName, batchName, userName, authCode} = bodyObject;
       // If the form submits an order and is valid:
       if (requestURL === '/aorta/order' && scriptName && userName && authCode) {
         // If the user is authorized to submit an order:
-        const log = [];
-        const reports = [];
-        const {handleRequest} = testaro;
-        fs.readFile(`scripts/${scriptName}.json`)
-        .then(async scriptJSON => {
-          const script = JSON.parse(scriptJSON);
-          const options = {
-            log,
-            reports,
-            script
-          };
-          if (batchName !== 'None') {
-            fs.readFile(`batches/${batchName}.json`)
-            .then(async batchJSON => {
-              const batch = JSON.parse(batchJSON);
-              options.batch = batch;
+        if (await userOK(userName, authCode, 'order')) {
+          const log = [];
+          const reports = [];
+          const {handleRequest} = testaro;
+          fs.readFile(`scripts/${scriptName}.json`)
+          .then(async scriptJSON => {
+            const script = JSON.parse(scriptJSON);
+            const options = {
+              log,
+              reports,
+              script
+            };
+            if (batchName !== 'None') {
+              fs.readFile(`batches/${batchName}.json`)
+              .then(async batchJSON => {
+                const batch = JSON.parse(batchJSON);
+                options.batch = batch;
+                await getTestaroResult(handleRequest, response, options);
+              });
+            }
+            else {
               await getTestaroResult(handleRequest, response, options);
-            });
-          }
-          else {
-            await getTestaroResult(handleRequest, response, options);
-          }
-          // Serve the result.
-        });
+            }
+            // Serve the result.
+          });
+        }
       }
       // Otherwise, i.e. if the form is invalid:
       else {
