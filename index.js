@@ -47,25 +47,20 @@ const err = (error, context, response) => {
 };
 // Serves content as a page.
 const servePage = (content, location, response) => {
+  console.log('About to set headers');
   response.setHeader('Content-Type', 'text/html');
   response.setHeader('Content-Location', location);
   response.end(content);
 };
 // Replaces the placeholders in a page and serves the page.
-const render = (nameBase, query, response) => {
+const render = async (nameBase, query, response) => {
   if (! response.writableEnded) {
     // Get the page.
-    fs.readFile(`./${nameBase}.html`, 'utf8')
-    .then(
-      // When it arrives:
-      page => {
-        // Replace its placeholders with eponymous query parameters.
-        const renderedPage = page.replace(/__([a-zA-Z]+)__/g, (ph, qp) => query[qp]);
-        // Serve the page.
-        servePage(renderedPage, `/aorta/${nameBase}.html`, response);
-      },
-      error => err(error, 'reading a page', response)
-    );
+    const page = await fs.readFile(`./${nameBase}.html`, 'utf8');
+    // Replace its placeholders with eponymous query parameters.
+    const renderedPage = page.replace(/__([a-zA-Z]+)__/g, (ph, qp) => query[qp]);
+    // Serve the page.
+    servePage(renderedPage, `/aorta/${nameBase}.html`, response);
   }
 };
 // Serves the stylesheet.
@@ -112,28 +107,40 @@ const orderSpecs = order => `script ${order.scriptName}, batch ${order.batchName
 // Adds the orders, jobs, or testers to a query.
 const addItems = async (query, itemType, isSelect) => {
   let size, key, dir, specs;
-  if (itemType === 'order') {
+  if (itemType === 'script') {
+    size = 'scriptListSize';
+    key = 'scripts';
+    dir = 'scripts';
+    specs = item => item.what;
+  }
+  else if (itemType === 'batch') {
+    size = 'batchListSize';
+    key = 'batches';
+    dir = 'batches';
+    specs = item => item.what;
+  }
+  else if (itemType === 'order') {
     size = 'orderListSize';
     key = 'orders';
-    dir = 'orders';
+    dir = '.data/orders';
     specs = item => orderSpecs(item);
   }
   else if (itemType === 'job') {
     size = 'jobListSize';
     key = 'jobs';
-    dir = 'jobs';
+    dir = '.data/jobs';
     specs = item => `${orderSpecs(item)}, tester ${item.tester}`;
   }
   else if (itemType = 'tester') {
     size = 'testerListSize';
     key = 'testers';
-    dir = 'users';
+    dir = '.data/users';
     specs = item => `${item.id}: ${item.name}`;
   }
-  const itemNames = await fs.readdir(`.data/${key}`);
+  const itemFileNames = await fs.readdir(dir);
   query[size] = itemJSONs.length;
   let items = [];
-  for (const itemName of itemNames) {
+  for (const fileName of itemFileNames) {
     const itemJSON = await fs.readFile(`.data/${dir}/${itemName}`);
     const item = JSON.parse(itemJSON);
     item.isValid = key === 'testers' ? item.roles.includes('test') : true;
@@ -191,7 +198,7 @@ const requestHandler = (request, response) => {
   .on('data', chunk => {
     bodyParts.push(chunk);
   })
-  .on('end', () => {
+  .on('end', async () => {
     // Remove any trailing slash from the URL.
     const requestURL = request.url.replace(/\/$/, '');
     // Initialize the query.
@@ -201,27 +208,15 @@ const requestHandler = (request, response) => {
       // If the requested resource is the home page:
       if (requestURL === '/aorta') {
         // Serve the page.
-        render('index', {}, response);
+        await render('index', {}, response);
       }
       // Otherwise, if it is the ordering page:
       else if (requestURL === '/aorta/order') {
         // Add the page parameters to the query.
-        fs.readdir('scripts')
-        .then(scriptNames => {
-          fs.readdir('batches')
-          .then(batchNames => {
-            query.scriptListSize = scriptNames.length;
-            query.batchListSize = batchNames.length + 1;
-            query.scriptOptions = scriptNames.map(
-              scriptName => `<option>${scriptName.slice(0, -5)}</option>`
-            ).join('\n');
-            batchOptions = batchNames.map(batchName => `<option>${batchName.slice(0, -5)}</option>`);
-            batchOptions.unshift('<option>None</option>');
-            query.batchOptions = batchOptions.join('\n');
-            // Serve the page.
-            render('order', query, response);
-          });
-        });
+        await addItems(query, 'script', true);
+        await addItems(query, 'batch', true);
+        // Serve the page.
+        await render('order', query, response);
       }
       // Otherwise, if it is the orders page:
       else if (requestURL === '/aorta/orders') {
@@ -229,7 +224,7 @@ const requestHandler = (request, response) => {
         addItems(query, 'order', false);
         addItems(query, 'job', false);
         // Serve the page.
-        render('orders', query, response);
+        await render('orders', query, response);
       }
       // Otherwise, if it is the assignment page:
       else if (requestURL === '/aorta/assign') {
@@ -237,19 +232,19 @@ const requestHandler = (request, response) => {
         addItems(query, 'order', true);
         addItems(query, 'tester', true);
         // Serve the page.
-        render('assign', query, response);
+        await render('assign', query, response);
       }
-      // Otherwise, if it is the report-submission page:
+      // Otherwise, if it is the reporting page:
       else if (requestURL === '/aorta/report') {
         // Add the page parameters to the query.
         addItems(query, 'job', false);
         // Serve the page.
-        render('report', query, response);
+        await render('report', query, response);
       }
       // Otherwise, if it is the report-retrieval page:
       else if (requestURL === '/aorta/get') {
         // Serve the page.
-        render('get', query, response);
+        await render('get', query, response);
       }
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
@@ -311,7 +306,7 @@ const requestHandler = (request, response) => {
             await addItems(query, 'order', true);
             await addItems(query, 'job', true);
             // Serve the selection page.
-            render('readAll', query, response);
+            await render('assign', query, response);
           }
         }
       }
@@ -350,7 +345,6 @@ const serve = async () => {
       `Server listening at ${protocolName}://${process.env.HOST || 'localhost'}:${port}/aorta.`
     );
   });
-  const userIDs = fs.readdir('')
 };
 // Start the server.
 serve();
