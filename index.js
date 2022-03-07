@@ -199,8 +199,9 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/assign') {
         // Add the page parameters to the query.
         addItems(query, 'order', true);
+        addItems(query, 'tester', true);
         // Serve the page.
-        render('orders', query, response);
+        render('assign', query, response);
       }
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
