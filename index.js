@@ -185,7 +185,7 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/orders') {
         // Add the page parameters to the query.
         addItems(query, 'order', false);
-        addOrders(query, 'job', false);
+        addItems(query, 'job', false);
         // Serve the page.
         render('orders', query, response);
       }
