@@ -184,15 +184,15 @@ const requestHandler = (request, response) => {
       // Otherwise, if it is the orders page:
       else if (requestURL === '/aorta/orders') {
         // Add the page parameters to the query.
-        addOrders(query, false, false);
-        addOrders(query, true, false);
+        addItems(query, 'order', false);
+        addOrders(query, 'job', false);
         // Serve the page.
         render('orders', query, response);
       }
       // Otherwise, if it is the assignment page:
       else if (requestURL === '/aorta/assign') {
         // Add the page parameters to the query.
-        addOrders(query, false, true);
+        addItems(query, 'order', true);
         // Serve the page.
         render('orders', query, response);
       }
