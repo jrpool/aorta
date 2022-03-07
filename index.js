@@ -202,6 +202,18 @@ const requestHandler = (request, response) => {
         // Serve the page.
         render('assign', query, response);
       }
+      // Otherwise, if it is the report-submission page:
+      else if (requestURL === '/aorta/report') {
+        // Add the page parameters to the query.
+        addItems(query, 'job', false);
+        // Serve the page.
+        render('report', query, response);
+      }
+      // Otherwise, if it is the report-retrieval page:
+      else if (requestURL === '/aorta/get') {
+        // Serve the page.
+        render('get', query, response);
+      }
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
         // Serve it.

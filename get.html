@@ -2,7 +2,7 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <title>Aorta</title>
+    <title>Report retrieval | Aorta</title>
     <meta name="description" content="Automated Order Router for Tests of Accessibility (Aorta)">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/aorta/style.css">
@@ -10,17 +10,15 @@
   </head>
   <body>
     <main>
-      <h1>Aorta</h1>
+      <h1>Aorta report retrieval</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
-      <h2>Your options</h2>
-      <p>If you are authorized, you can:</p>
-      <ol>
-        <li><a href="/aorta/order">Submit an order</a></li>
-        <li><a href="/aorta/orders">See the orders</a></li>
-        <li><a href="/aorta/assign">Assign an order</a> to a tester</li>
-        <li><a href="/aorta/report">Submit a test report</a></li>
-        <li><a href="/aorta/get">Retrieve a test reports</a></li>
-      </ol>
+      <form action="/aorta/assign" method="post" class="flex">
+        <section>
+          <p><label>Your username <input id="userName" size="10"></label></p>
+          <p><label>Your authorization code <input id="authCode" size="10"></label></p>
+          <p><button>Submit</button></p>
+        </section>
+      </form>
     </main>
   </body>
 </html>
