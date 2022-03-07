@@ -121,20 +121,26 @@ const addItems = async (query, itemType, isSelect) => {
   else if (itemType === 'job') {
     size = 'jobListSize';
     key = 'jobs';
-    assignment = item => ` assigned to ${item.tester}`;
+    specs = item => `${orderSpecs(item)}, tester ${item.tester}`;
   }
   else if (itemType = 'tester') {
     size = 'testerListSize';
     key = 'testers';
+    specs = item => `${item.id}: ${item.name}`;
   }
-  const items = await fs.readdir(`.data/${key}`);
-  query[size] = items.length;
-  query[key] = items.map(item => {
+  const itemNames = await fs.readdir(`.data/${key}`);
+  const itemJSONs = [];
+  for (const itemName of itemNames) {
+    itemJSONs.push(await fs.readFile(`.data/${itemName}.json`));
+  }
+  query[size] = itemJSONs.length;
+  query[key] = itemJSONs.map(itemJSON => {
+    const item = JSON.parse(itemJSON);
     if (isSelect) {
-      return `<option value="${order.id}">${item.id}: ${orderSpecs(item)}</li>`
+      return `<option value="${item.id}">${item.id}: ${specs(item)}</li>`
     }
     else {
-      return `<li>${item.id}${assignment}: ${orderSpecs(item)}</li>`;
+      return `<li>${item.id}: ${specs(item)}</li>`;
     }
   })
   .join('\n');
