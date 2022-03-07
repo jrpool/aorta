@@ -130,7 +130,7 @@ const addItems = async (query, itemType, isSelect) => {
   const itemNames = await fs.readdir(`.data/${key}`);
   const itemJSONs = [];
   for (const itemName of itemNames) {
-    itemJSONs.push(await fs.readFile(`.data/${key}/${itemName}.json`));
+    itemJSONs.push(await fs.readFile(`.data/${key}/${itemName}`));
   }
   query[size] = itemJSONs.length;
   query[key] = itemJSONs.map(itemJSON => {
