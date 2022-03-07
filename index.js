@@ -149,14 +149,19 @@ const addItems = async (query, itemType, isSelect) => {
   })
   .join('\n');
 };
-// Validates a user.
+// Validates a user and, if valid, returns the user’s roles.
 const userOK = async (userName, authCode, role) => {
   const userFileNames = await fs.readdir('.data/users');
   const userIndex = userFileNames.findIndex(fileName.slice(0, -5) === userName);
   if (userIndex > -1) {
     const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
     const user = JSON.parse(userJSON);
-    return user.authCode === authCode && (! role || user.roles.includes(role));
+    if (user.authCode === authCode && (! role || user.roles.includes(role))) {
+      return user.roles;
+    }
+    else {
+      return false;
+    }
   }
   else {
     return false;
@@ -164,13 +169,17 @@ const userOK = async (userName, authCode, role) => {
 };
 // Writes an order.
 const writeOrder = async (userName, options) => {
-  const timeStamp = Math.floor((Date.now() - Date.UTC(2022, 1)) / 100).toString(36);
+  const id = Math.floor((Date.now() - Date.UTC(2022, 1)) / 100).toString(36);
   const data = {
+    id,
     userName,
-    script: options.script,
-    batch: options.batch
+    time: Date.now(),
+    script: options.script
   };
-  await fs.writeFile(`.data/orders/${timeStamp}.json`, JSON.stringify(data, null, 2));
+  if (options.batch) {
+    data.batch = options.batch;
+  }
+  await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
 };
 // Handles requests.
 const requestHandler = (request, response) => {
@@ -272,33 +281,40 @@ const requestHandler = (request, response) => {
       if (requestURL === '/aorta/order' && scriptName && userName && authCode) {
         // If the user is authorized to submit an order:
         if (await userOK(userName, authCode, 'order')) {
-          const log = [];
-          const reports = [];
-          const {handleRequest} = testaro;
-          fs.readFile(`scripts/${scriptName}.json`)
-          .then(async scriptJSON => {
-            const script = JSON.parse(scriptJSON);
-            const options = {
-              log,
-              reports,
-              script
-            };
-            if (batchName !== 'None') {
-              fs.readFile(`batches/${batchName}.json`)
-              .then(async batchJSON => {
-                const batch = JSON.parse(batchJSON);
-                options.batch = batch;
-                await getTestaroResult(handleRequest, response, options);
-              });
-            }
-            else {
-              await getTestaroResult(handleRequest, response, options);
-            }
-            // Serve the result.
-          });
+          const options = {};
+          // Get the script.
+          const scriptJSON = await fs.readFile(`scripts/${scriptName}.json`);
+          options.script = JSON.parse(scriptJSON);
+          // If a batch was specified:
+          if (batchName !== 'None') {
+            // Get it.
+            const batchJSON = fs.readFile(`batches/${batchName}.json`);
+            options.batch = JSON.parse(batchJSON);
+            // Write the order.
+            writeOrder(userName, options);
+          }
+          // Otherwise, i.e. if no batch was specified:
+          else {
+            // Write the order.
+            writeOrder(userName, options);
+          }
         }
       }
-      // Otherwise, i.e. if the form is invalid:
+      // Otherwise, if the form assigns an order:
+      else if (requestURL === '/aorta/assign') {
+        // If the user is valid:
+        const userRoles = await userOK(userName, authCode);
+        if (userRoles) {
+          // If the user has permission to read all orders and jobs:
+          if (userRoles.includes('read')) {
+            // Add them to the query.
+            await addItems(query, 'order', true);
+            await addItems(query, 'job', true);
+            // Serve the selection page.
+            render('readAll', query, response);
+          }
+        }
+      }
       else {
         // Serve an error page.
         err('Invalid request submitted', 'in Aorta', response);
