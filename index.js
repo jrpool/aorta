@@ -150,22 +150,50 @@ const addItems = async (query, itemType, isSelect) => {
   })
   .join('\n');
 };
-// Validates a user and, if valid, returns the user’s roles.
+// Validates a user’s existence and role.
 const userOK = async (userName, authCode, role) => {
+  // If the specified user name exists:
   const userFileNames = await fs.readdir('.data/users');
   const userIndex = userFileNames.findIndex(fileName.slice(0, -5) === userName);
   if (userIndex > -1) {
+    // Get data on the user.
     const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
     const user = JSON.parse(userJSON);
-    if (user.authCode === authCode && (! role || user.roles.includes(role))) {
-      return user.roles;
+    // If the specified authorization code is correct:
+    if (user.authCode === authCode) {
+      // If no role is required or the user has the specified role:
+      if (! role || user.roles.includes(role)) {
+        // Return the facts.
+        return {
+          exists: true,
+          hasRole: true,
+          roles: user.roles
+        };
+      }
+      // Otherwise, i.e. if the user does not have the specified role:
+      else {
+        // Return the facts.
+        return {
+          exists: true,
+          hasRole: false,
+          roles: user.roles
+        };
+      }
     }
+    // Otherwise, i.e. if the authorization code is incorrect:
     else {
-      return false;
+      // Return the fact.
+      return {
+        exists: false
+      };
     }
   }
+  // Otherwise, i.e. if the user name does not exist:
   else {
-    return false;
+    // Return the fact.
+    return {
+      exists: false
+    };
   }
 };
 // Writes an order.
@@ -181,6 +209,23 @@ const writeOrder = async (userName, options) => {
     data.batch = options.batch;
   }
   await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
+};
+// Gets the content of a script or batch.
+const getOrderPart = async (fileNameBase, partDir) => {
+  try {
+    const partJSON = await fs.readFile(`.data/${partDir}/${fileNameBase}.json`, 'utf8');
+    const content = JSON.parse(partJSON);
+    return {
+      isValid: true,
+      content
+    };
+  }
+  catch(error) {
+    return {
+      isValid: false,
+      error
+    }
+  }
 };
 // Handles requests.
 const requestHandler = (request, response) => {
@@ -271,27 +316,54 @@ const requestHandler = (request, response) => {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
       const {scriptName, batchName, userName, authCode} = bodyObject;
-      // If the form submits an order and is valid:
-      if (requestURL === '/aorta/order' && scriptName && userName && authCode) {
-        // If the user is authorized to submit an order:
-        if (await userOK(userName, authCode, 'order')) {
-          const options = {};
-          // Get the script.
-          const scriptJSON = await fs.readFile(`scripts/${scriptName}.json`);
-          options.script = JSON.parse(scriptJSON);
-          // If a batch was specified:
-          if (batchName !== 'None') {
-            // Get it.
-            const batchJSON = fs.readFile(`batches/${batchName}.json`);
-            options.batch = JSON.parse(batchJSON);
-            // Write the order.
-            await writeOrder(userName, options);
+      // If the form submits an order:
+      if (requestURL === '/aorta/order') {
+        // If it specifies a script:
+        if (scriptName) {
+          // If it specifies a user name:
+          if (userName) {
+            // If it specifies an authorization code:
+            if (authCode) {
+              // If the user is authorized to submit an order:
+              const userData = userOK(userName, authCode, 'order');
+              if (userData.hasRole) {
+                const options = {};
+                // Get the script.
+                options.script = await getOrderPart(scriptName, 'scripts');
+                // If a batch was specified:
+                if (batchName !== 'None') {
+                  // Get it.
+                  options.batch = await getOrderPart(batchName, 'batches');
+                  // Write the order.
+                  await writeOrder(userName, options);
+                }
+                // Otherwise, i.e. if no batch was specified:
+                else {
+                  // Write the order.
+                  await writeOrder(userName, options);
+                }
+              }
+              else if (userData.isValid) {
+                err('This user is not authorized to submit orders', 'receiving order', response);
+              }
+              else {
+                err(
+                  'Combination of username and authorization code invalid',
+                  'receiving order',
+                  response
+                );
+              }
+            }
+            else {
+              err('No authorization code entered', 'receiving order');
+            }
           }
-          // Otherwise, i.e. if no batch was specified:
           else {
-            // Write the order.
-            await writeOrder(userName, options);
+            err('No username entered', 'receiving order');
           }
+        }
+        else {
+          err('No script selected', 'receiving order');
         }
       }
       // Otherwise, if the form assigns an order:
