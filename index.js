@@ -27,7 +27,7 @@ const {parse} = require('querystring');
 // ==== OPERATION UTILITIES ====
 
 // Processes a thrown error.
-const err = (error, context, response) => {
+const err = async (error, context, response) => {
   let problem = error;
   // If error is system-defined:
   if (typeof error !== 'string') {
@@ -42,15 +42,15 @@ const err = (error, context, response) => {
   const query = {
     errorMessage: msg.replace(/\n/g, '<br>')
   };
-  render('error', query, response);
+  await render('error', query, response);
   return '';
 };
 // Serves content as a page.
 const servePage = (content, location, response) => {
-  console.log('About to set headers');
   response.setHeader('Content-Type', 'text/html');
   response.setHeader('Content-Location', location);
   response.end(content);
+  console.log('Response ended');
 };
 // Replaces the placeholders in a page and serves the page.
 const render = async (nameBase, query, response) => {
@@ -88,16 +88,11 @@ const serveScript = (scriptName, response) => {
   );
 };
 // Serves the site icon.
-const serveIcon = response => {
-  fs.readFile('favicon.png')
-  .then(
-    content => {
-      response.setHeader('Content-Type', 'image/png');
-      response.write(content, 'binary');
-      response.end();
-    },
-    error => err(error, 'reading site icon', response)
-  );
+const serveIcon = async response => {
+  const icon = await fs.readFile('favicon.png');
+  response.setHeader('Content-Type', 'image/png');
+  response.write(icon);
+  response.end();
 };
 
 // ==== REQUEST-PROCESSING UTILITIES ====
@@ -320,9 +315,6 @@ const requestHandler = (request, response) => {
       // Serve an error page.
       err('Unanticipated request method', 'in Aorta', response);
     }
-  });
-  request.on('close', () => {
-    response.end();
   });
 };
 
