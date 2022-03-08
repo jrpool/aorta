@@ -77,7 +77,7 @@ const serveResource = async (fileName, contentType, encoding, response) => {
 
 // Returns an order description.
 const orderSpecs = order => `script ${order.scriptName}, batch ${order.batchName}`;
-// Adds the scripts, batches, orders, jobs, or testers to a query.
+// Adds metadata on the scripts, batches, orders, jobs, testers, or reports to a query.
 const addItems = async (query, itemType, isSelect) => {
   let size, key, dir, specs, addNone;
   if (itemType === 'script') {
@@ -110,6 +110,12 @@ const addItems = async (query, itemType, isSelect) => {
     key = 'testers';
     dir = 'users';
     specs = item => item.name;
+  }
+  else if (itemType = 'report') {
+    size = 'reportListSize';
+    key = 'reports';
+    dir = 'reports';
+    specs = item => `${item.id}: ${item.userName}`;
   }
   const itemFileNames = await fs.readdir(`.data/${dir}`);
   let items = [];

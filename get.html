@@ -13,11 +13,13 @@
       <h1>Aorta report retrieval</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
       <form action="/aorta/assign" method="post" class="flex">
-        <section>
-          <p><label>Your username <input id="userName" size="10"></label></p>
-          <p><label>Your authorization code <input id="authCode" size="10"></label></p>
-          <p><button>Submit</button></p>
-        </section>
+        <p><label for="order">Report</label></p>
+        <select id="report" name="report" size="__reportListSize__">
+          __reports__
+        </select>
+      <p><label>Your username <input id="userName" size="10"></label></p>
+        <p><label>Your authorization code <input id="authCode" size="10"></label></p>
+        <p><button>Submit</button></p>
       </form>
     </main>
   </body>
