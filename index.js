@@ -50,7 +50,6 @@ const servePage = (content, location, response) => {
   response.setHeader('Content-Type', 'text/html');
   response.setHeader('Content-Location', location);
   response.end(content);
-  console.log('Response ended');
 };
 // Replaces the placeholders in a page and serves the page.
 const render = async (nameBase, query, response) => {
@@ -63,36 +62,15 @@ const render = async (nameBase, query, response) => {
     servePage(renderedPage, `/aorta/${nameBase}.html`, response);
   }
 };
-// Serves the stylesheet.
-const serveStyles = response => {
-  fs.readFile('style.css', 'utf8')
-  .then(
-    content => {
-      response.setHeader('Content-Type', 'text/css');
-      response.write(content);
-      response.end();
-    },
-    error => err(error, 'reading stylesheet', response)
-  );
-};
-// Serves a script.
-const serveScript = (scriptName, response) => {
-  fs.readFile(scriptName, 'utf8')
-  .then(
-    content => {
-      response.setHeader('Content-Type', 'text/javascript');
-      response.write(content);
-      response.end();
-    },
-    error => err(error, 'reading script', response)
-  );
-};
-// Serves the site icon.
-const serveIcon = async response => {
-  const icon = await fs.readFile('favicon.png');
-  response.setHeader('Content-Type', 'image/png');
-  response.write(icon);
-  response.end();
+// Serves a resource.
+const serveResource = async (fileName, contentType, encoding, response) => {
+  const readArgs = [fileName];
+  if (encoding) {
+    readArgs.push(encoding);
+  }
+  const content = await fs.readFile(...readArgs);
+  response.setHeader('Content-Type', contentType);
+  response.end(content);
 };
 
 // ==== REQUEST-PROCESSING UTILITIES ====
@@ -133,10 +111,10 @@ const addItems = async (query, itemType, isSelect) => {
     specs = item => `${item.id}: ${item.name}`;
   }
   const itemFileNames = await fs.readdir(dir);
-  query[size] = itemJSONs.length;
+  query[size] = itemFileNames.length;
   let items = [];
   for (const fileName of itemFileNames) {
-    const itemJSON = await fs.readFile(`.data/${dir}/${itemName}`);
+    const itemJSON = await fs.readFile(`.data/${dir}/${fileName}`);
     const item = JSON.parse(itemJSON);
     item.isValid = key === 'testers' ? item.roles.includes('test') : true;
     items.push(item);
@@ -244,17 +222,17 @@ const requestHandler = (request, response) => {
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
         // Serve it.
-        serveStyles(response);
+        serveResource('style.css', 'text/css', 'utf8', response);
       }
       // Otherwise, if it is the script:
       else if (requestURL === '/aorta/script.js') {
         // Serve it.
-        serveScript('script.js', response);
+        serveResource('script.js', 'text/javascript', 'utf8', response);
       }
       // Otherwise, if it is the site icon:
       else if (requestURL.startsWith('/aorta/favicon.')) {
         // Serve it.
-        serveIcon(response);
+        serveResource('favicon.png', 'image/png', '', response);
       }
       // Otherwise, i.e. if the request is invalid:
       else {
