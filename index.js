@@ -96,19 +96,19 @@ const addItems = async (query, itemType, isSelect) => {
   else if (itemType === 'order') {
     size = 'orderListSize';
     key = 'orders';
-    dir = '.data/orders';
+    dir = 'orders';
     specs = item => orderSpecs(item);
   }
   else if (itemType === 'job') {
     size = 'jobListSize';
     key = 'jobs';
-    dir = '.data/jobs';
+    dir = 'jobs';
     specs = item => `${orderSpecs(item)}, tester ${item.tester}`;
   }
   else if (itemType = 'tester') {
     size = 'testerListSize';
     key = 'testers';
-    dir = '.data/users';
+    dir = 'users';
     specs = item => `${item.id}: ${item.name}`;
   }
   const itemFileNames = await fs.readdir(`.data/${dir}`);
@@ -131,7 +131,6 @@ const addItems = async (query, itemType, isSelect) => {
       what: 'Do not use a batch',
       isValid: true
     });
-    size++;
   }
   query[size] = items.length;
   // Add an HTML string encoding options or list items to the query.
