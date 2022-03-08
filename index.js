@@ -110,7 +110,7 @@ const addItems = async (query, itemType, isSelect) => {
     dir = '.data/users';
     specs = item => `${item.id}: ${item.name}`;
   }
-  const itemFileNames = await fs.readdir(dir);
+  const itemFileNames = await fs.readdir(`.data/${dir}`);
   query[size] = itemFileNames.length;
   let items = [];
   for (const fileName of itemFileNames) {
