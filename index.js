@@ -112,7 +112,6 @@ const addItems = async (query, itemType, isSelect) => {
     specs = item => `${item.id}: ${item.name}`;
   }
   const itemFileNames = await fs.readdir(`.data/${dir}`);
-  query[size] = itemFileNames.length;
   let items = [];
   for (const fileName of itemFileNames) {
     const itemJSON = await fs.readFile(`.data/${dir}/${fileName}`);
@@ -132,7 +131,9 @@ const addItems = async (query, itemType, isSelect) => {
       what: 'Do not use a batch',
       isValid: true
     });
+    size++;
   }
+  query[size] = items.length;
   // Add an HTML string encoding options or list items to the query.
   query[key] = items.filter(item => item.isValid).map(item => {
     if (isSelect) {
