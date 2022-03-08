@@ -209,23 +209,23 @@ const requestHandler = (request, response) => {
       // Otherwise, if it is the orders page:
       else if (requestURL === '/aorta/orders') {
         // Add the page parameters to the query.
-        addItems(query, 'order', false);
-        addItems(query, 'job', false);
+        await addItems(query, 'order', false);
+        await addItems(query, 'job', false);
         // Serve the page.
         await render('orders', query, response);
       }
       // Otherwise, if it is the assignment page:
       else if (requestURL === '/aorta/assign') {
         // Add the page parameters to the query.
-        addItems(query, 'order', true);
-        addItems(query, 'tester', true);
+        await addItems(query, 'order', true);
+        await addItems(query, 'tester', true);
         // Serve the page.
         await render('assign', query, response);
       }
       // Otherwise, if it is the reporting page:
       else if (requestURL === '/aorta/report') {
         // Add the page parameters to the query.
-        addItems(query, 'job', false);
+        await addItems(query, 'job', false);
         // Serve the page.
         await render('report', query, response);
       }
@@ -242,17 +242,17 @@ const requestHandler = (request, response) => {
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
         // Serve it.
-        serveResource('style.css', 'text/css', 'utf8', response);
+        await serveResource('style.css', 'text/css', 'utf8', response);
       }
       // Otherwise, if it is the script:
       else if (requestURL === '/aorta/script.js') {
         // Serve it.
-        serveResource('script.js', 'text/javascript', 'utf8', response);
+        await serveResource('script.js', 'text/javascript', 'utf8', response);
       }
       // Otherwise, if it is the site icon:
       else if (requestURL.startsWith('/aorta/favicon.')) {
         // Serve it.
-        serveResource('favicon.png', 'image/png', '', response);
+        await serveResource('favicon.png', 'image/png', '', response);
       }
       // Otherwise, i.e. if the request is invalid:
       else {
@@ -279,12 +279,12 @@ const requestHandler = (request, response) => {
             const batchJSON = fs.readFile(`batches/${batchName}.json`);
             options.batch = JSON.parse(batchJSON);
             // Write the order.
-            writeOrder(userName, options);
+            await writeOrder(userName, options);
           }
           // Otherwise, i.e. if no batch was specified:
           else {
             // Write the order.
-            writeOrder(userName, options);
+            await writeOrder(userName, options);
           }
         }
       }
