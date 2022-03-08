@@ -129,7 +129,8 @@ const addItems = async (query, itemType, isSelect) => {
   if (addNone) {
     items.unshift({
       id: 'NONE',
-      what: 'Do not use a batch'
+      what: 'Do not use a batch',
+      isValid: true
     });
   }
   // Add an HTML string encoding options or list items to the query.
