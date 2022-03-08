@@ -76,7 +76,7 @@ const serveResource = async (fileName, contentType, encoding, response) => {
 // ==== REQUEST-PROCESSING UTILITIES ====
 
 // Returns an order description.
-const orderSpecs = order => `script ${order.scriptName}, batch ${order.batchName}`;
+const orderSpecs = order => `from ${order.userName}, script ${order.scriptName}, batch ${order.batchName}`;
 // Adds metadata on the scripts, batches, orders, jobs, testers, or reports to a query.
 const addItems = async (query, itemType, isSelect) => {
   let size, key, dir, specs, addNone;
@@ -174,7 +174,7 @@ const writeOrder = async (userName, options) => {
   const data = {
     id,
     userName,
-    time: Date.now(),
+    time: (new Date()).toISOString().slice(0, 19),
     script: options.script
   };
   if (options.batch) {
