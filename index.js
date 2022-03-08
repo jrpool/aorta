@@ -79,7 +79,7 @@ const serveResource = async (fileName, contentType, encoding, response) => {
 const orderSpecs = order => `script ${order.scriptName}, batch ${order.batchName}`;
 // Adds the scripts, batches, orders, jobs, or testers to a query.
 const addItems = async (query, itemType, isSelect) => {
-  let size, key, dir, specs;
+  let size, key, dir, specs, addNone;
   if (itemType === 'script') {
     size = 'scriptListSize';
     key = 'scripts';
@@ -91,6 +91,7 @@ const addItems = async (query, itemType, isSelect) => {
     key = 'batches';
     dir = 'batches';
     specs = item => item.what;
+    addNone = true;
   }
   else if (itemType === 'order') {
     size = 'orderListSize';
@@ -124,6 +125,12 @@ const addItems = async (query, itemType, isSelect) => {
     // Classify the item as valid unless testers are being added and the item has no test role.
     item.isValid = key === 'testers' ? item.roles.includes('test') : true;
     items.push(item);
+  }
+  if (addNone) {
+    items.unshift({
+      id: 'NONE',
+      what: 'Do not use a batch'
+    });
   }
   // Add an HTML string encoding options or list items to the query.
   query[key] = items.filter(item => item.isValid).map(item => {
