@@ -234,6 +234,11 @@ const requestHandler = (request, response) => {
         // Serve the page.
         await render('get', query, response);
       }
+      // Otherwise, if it is the item-addition page:
+      else if (requestURL === '/aorta/add') {
+        // Serve the page.
+        await render('add', query, response);
+      }
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
         // Serve it.

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <title>Item addition | Aorta</title>
+    <meta name="description" content="Automated Order Router for Tests of Accessibility (Aorta)">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/aorta/style.css">
+    <link rel="icon" href="/aorta/favicon.png">
+  </head>
+  <body>
+    <main>
+      <h1>Aorta item addition</h1>
+      <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
+      <form action="/aorta/add" method="post" class="flex">
+        <p><label for="itemType">Item type</label></p>
+        <select id="itemType" name="itemType" size="3">
+          <option>Script</option>
+          <option>Batch</option>
+          <option>User</option>
+        </select>
+        <p><label for="item">Item content (in JSON format)</label></p>
+        <textarea id="item" rows="20" cols="80"></textarea>
+        <p><label>Your username <input id="userName" size="10"></label></p>
+        <p><label>Your authorization code <input id="authCode" size="10"></label></p>
+        <p><button>Submit</button></p>
+      </form>
+    </main>
+  </body>
+</html>
