@@ -77,7 +77,7 @@ const serveResource = async (fileName, contentType, encoding, response) => {
 
 // Returns an order description.
 const orderSpecs = order => `script ${order.scriptName}, batch ${order.batchName}`;
-// Adds the orders, jobs, or testers to a query.
+// Adds the scripts, batches, orders, jobs, or testers to a query.
 const addItems = async (query, itemType, isSelect) => {
   let size, key, dir, specs;
   if (itemType === 'script') {
@@ -116,9 +116,16 @@ const addItems = async (query, itemType, isSelect) => {
   for (const fileName of itemFileNames) {
     const itemJSON = await fs.readFile(`.data/${dir}/${fileName}`);
     const item = JSON.parse(itemJSON);
+    // If the item has no 'id' property (i.e. is a script or batch):
+    if (! item.id) {
+      // Use its filename base as the 'id' property.
+      item.id = fileName.slice(0, -5);
+    }
+    // Classify the item as valid unless testers are being added and the item has no test role.
     item.isValid = key === 'testers' ? item.roles.includes('test') : true;
     items.push(item);
   }
+  // Add an HTML string encoding options or list items to the query.
   query[key] = items.filter(item => item.isValid).map(item => {
     if (isSelect) {
       return `<option value="${item.id}">${item.id}: ${specs(item)}</li>`
