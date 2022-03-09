@@ -131,14 +131,7 @@ const addItems = async (query, itemType, isSelect) => {
     item.isValid = key === 'testers' ? item.roles.includes('test') : true;
     items.push(item);
   }
-  if (addNone) {
-    items.unshift({
-      id: 'NONE',
-      what: 'Do not use a batch',
-      isValid: true
-    });
-  }
-  query[size] = items.length;
+  query[size] = items.length + addNone ? 1 : 0;
   // Add an HTML string encoding options or list items to the query.
   query[key] = items.filter(item => item.isValid).map(item => {
     if (isSelect) {
@@ -341,21 +334,27 @@ const requestHandler = (request, response) => {
             options = {
               script: await getOrderPart(scriptName, 'scripts')
             };
-            // If a batch was specified:
-            if (batchName !== 'None') {
-              // Get it and add it to the order options.
-              options.batch = await getOrderPart(batchName, 'batches');
-              // Write the order.
-              await writeOrder(userName, options);
+            // If a batch was specified or waived:
+            if (batchName) {
+              // If it was waived:
+              if (batchName === 'None') {
+                // Write the order.
+                await writeOrder(userName, options);
+              }
+              // Otherwise, if it was specified:
+              else {
+                // Get the batch and add it to the order options.
+                options.batch = await getOrderPart(batchName, 'batches');
+                // Write the order.
+                await writeOrder(userName, options);
+              }
             }
-            // Otherwise, i.e. if no batch was specified:
             else {
-              // Write the order.
-              await writeOrder(userName, options);
+              err('No batch option selected', 'submitting order', response);
             }
           }
           else {
-            err('No script selected', 'submitting order');
+            err('No script selected', 'submitting order', response);
           }
         }
       }

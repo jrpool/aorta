@@ -14,12 +14,8 @@
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
       <form action="/aorta/assign" method="post" class="flex">
         <section>
-          <h2>Submit test reports</h2>
-          <p><label for="order">Job</label></p>
-          <select id="order" name="order" size="__jobListSize__">
-            __jobs__
-          </select>
-          <p><label for="reports">Reports (an array in JSON format)</label></p>
+          <h2>Report job results</h2>
+          <p><label for="reports">Results (an object in JSON format)</label></p>
           <p><textarea id="reports" rows="20" cols="80"></textarea></p>
           <p><label>Your username <input id="userName" size="10"></label></p>
           <p><label>Your authorization code <input id="authCode" size="10"></label></p>
