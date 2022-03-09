@@ -212,7 +212,7 @@ const writeOrder = async (userName, options) => {
   await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
 };
 // Assigns an order to a tester.
-const assignOrder = async (assignedBy, orderNameBase, testerName) => {
+const assignOrder = async (assignedBy, orderNameBase, testerName, response) => {
   // Get the order.
   const orderJSON = await fs.readFile(`.data/orders/${orderNameBase}.json`, 'utf8');
   const order = JSON.parse(orderJSON);
@@ -222,6 +222,8 @@ const assignOrder = async (assignedBy, orderNameBase, testerName) => {
   order.tester = testerName;
   // Write it as a job.
   await fs.writeFile(`.data/jobs/${orderName}.json`, JSON.stringify(order, null, 2));
+  // Delete it as an order.
+  await fs.rm(`.data/orders/${orderName}.json`);
 };
 // Gets the content of a script or batch.
 const getOrderPart = async (fileNameBase, partDir) => {
