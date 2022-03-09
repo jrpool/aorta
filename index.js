@@ -78,7 +78,7 @@ const serveResource = async (fileName, contentType, encoding, response) => {
 // Returns an order description.
 const orderSpecs = order => {
   const mainPart = `from <strong>${order.userName}</strong>, script <strong>${order.scriptName}</strong>`;
-  const batchPart = order.batchName ? `, batch <strong>${order.batch}</strong>` : '';
+  const batchPart = order.batchName ? `, batch <strong>${order.batchName}</strong>` : '';
   return `${mainPart}${batchPart}`;
 };
 // Adds metadata on the scripts, batches, orders, jobs, testers, or reports to a query.
