@@ -337,11 +337,13 @@ const requestHandler = (request, response) => {
         if (await userOK(userName, authCode, 'order', 'submitting order', response)) {
           // If a script was specified:
           if (scriptName) {
-            // Get it.
-            options.script = await getOrderPart(scriptName, 'scripts');
+            // Get it and initialize the order options.
+            options = {
+              script: await getOrderPart(scriptName, 'scripts')
+            };
             // If a batch was specified:
             if (batchName !== 'None') {
-              // Get it.
+              // Get it and add it to the order options.
               options.batch = await getOrderPart(batchName, 'batches');
               // Write the order.
               await writeOrder(userName, options);
