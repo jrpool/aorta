@@ -76,7 +76,11 @@ const serveResource = async (fileName, contentType, encoding, response) => {
 // ==== REQUEST-PROCESSING UTILITIES ====
 
 // Returns an order description.
-const orderSpecs = order => `from ${order.userName}, script ${order.scriptName}, batch ${order.batchName}`;
+const orderSpecs = order => {
+  const mainPart = `from ${order.userName}, script ${order.scriptName}`;
+  const batchPart = order.batchName ? `, batch ${order.batch}` : '';
+  return `${mainPart}${batchPart}`;
+};
 // Adds metadata on the scripts, batches, orders, jobs, testers, or reports to a query.
 const addItems = async (query, itemType, isSelect) => {
   let size, key, dir, specs, addNone;
@@ -193,14 +197,17 @@ const nowString = () => (new Date()).toISOString().slice(0, 19);
 // Writes an order and serves an acknowledgement page.
 const writeOrder = async (userName, options, response) => {
   const id = Math.floor((Date.now() - Date.UTC(2022, 1)) / 100).toString(36);
+  const {scriptName, batchName, script, batch} = options;
   const data = {
     id,
     userName,
     orderTime: nowString(),
-    script: options.script
+    scriptName,
+    batchName: batchName || '',
+    script
   };
-  if (options.batch) {
-    data.batch = options.batch;
+  if (batch) {
+    data.batch = batch;
   }
   await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
   await render(
@@ -335,6 +342,7 @@ const requestHandler = (request, response) => {
           if (scriptName) {
             // Get it and initialize the order options.
             options = {
+              scriptName,
               script: await getOrderPart(scriptName, 'scripts')
             };
             // If a batch was specified or waived:
@@ -347,6 +355,7 @@ const requestHandler = (request, response) => {
               // Otherwise, if it was specified:
               else {
                 // Get the batch and add it to the order options.
+                options.batchName = batchName;
                 options.batch = await getOrderPart(batchName, 'batches');
                 // Write the order.
                 await writeOrder(userName, options, response);
