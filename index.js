@@ -131,7 +131,7 @@ const addItems = async (query, itemType, isSelect) => {
     item.isValid = key === 'testers' ? item.roles.includes('test') : true;
     items.push(item);
   }
-  query[size] = items.length + addNone ? 1 : 0;
+  query[size] = items.length + (addNone ? 1 : 0);
   // Add an HTML string encoding options or list items to the query.
   query[key] = items.filter(item => item.isValid).map(item => {
     if (isSelect) {
