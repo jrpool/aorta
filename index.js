@@ -210,11 +210,12 @@ const writeOrder = async (userName, options, response) => {
     data.batch = batch;
   }
   await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
+  // Serve an acknowledgement page.
   await render(
     'ack', {message: `Order successfully received. ID: <strong>${id}</strong>`}, response
   );
 };
-// Assigns an order to a tester.
+// Assigns an order to a tester and serves an acknowledgement page.
 const assignOrder = async (assignedBy, orderNameBase, testerName, response) => {
   // Get the order.
   const orderJSON = await fs.readFile(`.data/orders/${orderNameBase}.json`, 'utf8');
@@ -224,9 +225,15 @@ const assignOrder = async (assignedBy, orderNameBase, testerName, response) => {
   order.assignedTime = nowString();
   order.tester = testerName;
   // Write it as a job.
-  await fs.writeFile(`.data/jobs/${orderName}.json`, JSON.stringify(order, null, 2));
+  await fs.writeFile(`.data/jobs/${orderNameBase}.json`, JSON.stringify(order, null, 2));
   // Delete it as an order.
-  await fs.rm(`.data/orders/${orderName}.json`);
+  await fs.rm(`.data/orders/${orderNameBase}.json`);
+  // Serve an acknowledgement page.
+  await render(
+    'ack',
+    {message: `Order successfully assigned as a job. ID: <strong>${orderNameBase}</strong>`},
+    response
+  );
 };
 // Gets the content of a script or batch.
 const getOrderPart = async (fileNameBase, partDir) => {
@@ -378,10 +385,8 @@ const requestHandler = (request, response) => {
           if (order) {
             // If a tester was specified:
             if (tester) {
-              // Assign the order to the tester.
+              // Assign the order to the tester and serve an acknowledgement page.
               await assignOrder(userName, order, tester);
-              // Serve the confirmation page.
-              await render('assigned', query, response);
             }
             else {
               err('No tester selected', 'assigning order', response);
