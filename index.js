@@ -46,10 +46,10 @@ const err = async (error, context, response) => {
   return '';
 };
 // Serves content as a page.
-const servePage = (content, location, response) => {
+const servePage = async (content, location, response) => {
   response.setHeader('Content-Type', 'text/html');
   response.setHeader('Content-Location', location);
-  response.end(content);
+  await response.end(content);
 };
 // Replaces the placeholders in a page and serves the page.
 const render = async (nameBase, query, response) => {
@@ -190,8 +190,8 @@ const userOK = async (userName, authCode, role, context, response) => {
 };
 // Returns a string representing the date and time.
 const nowString = () => (new Date()).toISOString().slice(0, 19);
-// Writes an order.
-const writeOrder = async (userName, options) => {
+// Writes an order and serves an acknowledgement page.
+const writeOrder = async (userName, options, response) => {
   const id = Math.floor((Date.now() - Date.UTC(2022, 1)) / 100).toString(36);
   const data = {
     id,
@@ -203,6 +203,7 @@ const writeOrder = async (userName, options) => {
     data.batch = options.batch;
   }
   await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
+  await render('ack', {message: `Order ${id} successfully received.`}, response);
 };
 // Assigns an order to a tester.
 const assignOrder = async (assignedBy, orderNameBase, testerName, response) => {
@@ -339,14 +340,14 @@ const requestHandler = (request, response) => {
               // If it was waived:
               if (batchName === 'None') {
                 // Write the order.
-                await writeOrder(userName, options);
+                await writeOrder(userName, options, response);
               }
               // Otherwise, if it was specified:
               else {
                 // Get the batch and add it to the order options.
                 options.batch = await getOrderPart(batchName, 'batches');
                 // Write the order.
-                await writeOrder(userName, options);
+                await writeOrder(userName, options, response);
               }
             }
             else {
