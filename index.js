@@ -139,10 +139,10 @@ const addItems = async (query, itemType, isSelect) => {
   // Add an HTML string encoding options or list items to the query.
   query[key] = items.filter(item => item.isValid).map(item => {
     if (isSelect) {
-      return `<option value="${item.id}">${item.id}: ${specs(item)}</li>`
+      return `<option value="${item.id}"><strong>${item.id}</strong>: ${specs(item)}</li>`
     }
     else {
-      return `<li>${item.id}: ${specs(item)}</li>`;
+      return `<li><strong>${item.id}</strong>: ${specs(item)}</li>`;
     }
   })
   .join('\n');
