@@ -82,41 +82,35 @@ const orderSpecs = order => {
   return `${mainPart}${batchPart}`;
 };
 // Adds metadata on the scripts, batches, orders, jobs, testers, or reports to a query.
-const addItems = async (query, itemType, isSelect) => {
+const addItems = async (query, itemType, isRadio) => {
   let size, key, dir, specs, addNone;
   if (itemType === 'script') {
-    size = 'scriptListSize';
     key = 'scripts';
     dir = 'scripts';
     specs = item => item.what;
   }
   else if (itemType === 'batch') {
-    size = 'batchListSize';
     key = 'batches';
     dir = 'batches';
     specs = item => item.what;
     addNone = true;
   }
   else if (itemType === 'order') {
-    size = 'orderListSize';
     key = 'orders';
     dir = 'orders';
     specs = item => orderSpecs(item);
   }
   else if (itemType === 'job') {
-    size = 'jobListSize';
     key = 'jobs';
     dir = 'jobs';
     specs = item => `${orderSpecs(item)}, tester ${item.tester}`;
   }
   else if (itemType = 'tester') {
-    size = 'testerListSize';
     key = 'testers';
     dir = 'users';
     specs = item => item.name;
   }
   else if (itemType = 'report') {
-    size = 'reportListSize';
     key = 'reports';
     dir = 'reports';
     specs = item => `${item.id}: ${item.userName}`;
@@ -135,11 +129,11 @@ const addItems = async (query, itemType, isSelect) => {
     item.isValid = key === 'testers' ? item.roles.includes('test') : true;
     items.push(item);
   }
-  query[size] = items.length + (addNone ? 1 : 0);
-  // Add an HTML string encoding options or list items to the query.
+  // Add an HTML string encoding radio buttons or list items to the query.
   query[key] = items.filter(item => item.isValid).map(item => {
-    if (isSelect) {
-      return `<option value="${item.id}"><strong>${item.id}</strong>: ${specs(item)}</li>`
+    if (isRadio) {
+      const input = `<input type="radio" name="${key}" value="${item.id}">`;
+      return `<p><label>${input}<strong>${item.id}</strong>: ${specs(item)}</label></p>`;
     }
     else {
       return `<li><strong>${item.id}</strong>: ${specs(item)}</li>`;

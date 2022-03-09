@@ -15,14 +15,14 @@
       <form action="/aorta/assign" method="post" class="flex">
         <section>
           <h2>Assign an order to a tester</h2>
-          <p><label for="order">Order</label></p>
-          <select id="order" name="order" size="__orderListSize__">
+          <fieldset>
+            <legend>Order</legend>
             __orders__
-          </select>
-          <p><label for="tester">Tester</label></p>
-          <select id="tester" name="tester" size="__testerListSize__">
+          </fieldset>
+          <fieldset>
+            <legend>Tester</legend>
             __testers__
-          </select>
+          </fieldset>
           <p><label>Your username <input name="userName" size="10"></label></p>
           <p><label>
             Your authorization code <input name="authCode" type="password" size="10">

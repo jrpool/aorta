@@ -15,15 +15,17 @@
       <form action="/aorta/order" method="post" class="flex">
         <section>
           <h2>Submit an order</h2>
-          <p><label for="scriptName">Script</label></p>
-          <select id="scriptName" name="scriptName" size="__scriptListSize__">
+          <fieldset>
+            <legend>Script</legend>
             __scripts__
-          </select>
-          <p><label for="batchName">Batch</label></p>
-          <select id="batchName" name="batchName" size="__batchListSize__">
-            <option value="none" selected>NONE: Do not use a batch</option>
+          </fieldset>
+          <fieldset>
+            <legend>Batch</legend>
+            <p><label>
+              <input type="radio" name="batch" value="none">NONE: Do not use a batch
+            </label></p>
             __batches__
-          </select>
+          </fieldset>
           <p><label>Your username <input name="userName" size="10"></label></p>
           <p><label>
             Your authorization code <input type="password" name="authCode" size="10">
