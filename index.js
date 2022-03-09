@@ -334,7 +334,7 @@ const requestHandler = (request, response) => {
       // If the form submits an order:
       if (requestURL === '/aorta/order') {
         // If the user exists and is authorized to submit orders:
-        if (userOK(userName, authCode, 'order', 'submitting order', response)) {
+        if (await userOK(userName, authCode, 'order', 'submitting order', response)) {
           // If a script was specified:
           if (scriptName) {
             // Get it.
