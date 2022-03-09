@@ -156,7 +156,7 @@ const userOK = async (userName, authCode, role, context, response) => {
   if (userName) {
     // If it is an existing user name:
     const userFileNames = await fs.readdir('.data/users');
-    const userIndex = userFileNames.findIndex(fileName.slice(0, -5) === userName);
+    const userIndex = userFileNames.findIndex(fileName => fileName.slice(0, -5) === userName);
     if (userIndex > -1) {
       // Get data on the user.
       const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
