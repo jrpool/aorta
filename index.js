@@ -150,65 +150,78 @@ const addItems = async (query, itemType, isSelect) => {
   })
   .join('\n');
 };
-// Validates a user’s existence and role.
-const userOK = async (userName, authCode, role) => {
-  // If the specified user name exists:
-  const userFileNames = await fs.readdir('.data/users');
-  const userIndex = userFileNames.findIndex(fileName.slice(0, -5) === userName);
-  if (userIndex > -1) {
-    // Get data on the user.
-    const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
-    const user = JSON.parse(userJSON);
-    // If the specified authorization code is correct:
-    if (user.authCode === authCode) {
-      // If no role is required or the user has the specified role:
-      if (! role || user.roles.includes(role)) {
-        // Return the facts.
-        return {
-          exists: true,
-          hasRole: true,
-          roles: user.roles
-        };
+// Returns whether a user exists and has a role.
+const userOK = async (userName, authCode, role, context, response) => {
+  // If a user name was specified:
+  if (userName) {
+    // If it is an existing user name:
+    const userFileNames = await fs.readdir('.data/users');
+    const userIndex = userFileNames.findIndex(fileName.slice(0, -5) === userName);
+    if (userIndex > -1) {
+      // Get data on the user.
+      const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
+      const user = JSON.parse(userJSON);
+      // If an authorization code was specified:
+      if (authCode) {
+        // If it is correct:
+        if (authCode === user.authCode) {
+          // If no role is required or the user has the specified role:
+          if (! role || user.roles.includes(role)) {
+            return true;
+          }
+          // Otherwise, i.e. if the user does not have the specified role:
+          else {
+            err('You are not an authorized user', context, response);
+            return false;
+          }
+        }
+        else {
+          err('Username or authorization code invalid', context, response);
+          return false;
+        }
       }
-      // Otherwise, i.e. if the user does not have the specified role:
-      else {
-        // Return the facts.
-        return {
-          exists: true,
-          hasRole: false,
-          roles: user.roles
-        };
+      else{
+        err('Authorization code missing', context, response);
+        return false;
       }
     }
-    // Otherwise, i.e. if the authorization code is incorrect:
     else {
-      // Return the fact.
-      return {
-        exists: false
-      };
+      err('Username or authorization code invalid', context, response);
+      return false;
     }
   }
-  // Otherwise, i.e. if the user name does not exist:
   else {
-    // Return the fact.
-    return {
-      exists: false
-    };
+    err('Username missing', context, response);
+    return false;
   }
 };
+// Returns a string representing the date and time.
+const nowString = () => (new Date()).toISOString().slice(0, 19);
 // Writes an order.
 const writeOrder = async (userName, options) => {
   const id = Math.floor((Date.now() - Date.UTC(2022, 1)) / 100).toString(36);
   const data = {
     id,
     userName,
-    time: (new Date()).toISOString().slice(0, 19),
+    orderTime: nowString(),
     script: options.script
   };
   if (options.batch) {
     data.batch = options.batch;
   }
   await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
+};
+// Assigns an order to a tester.
+const assignOrder = async (assignedBy, orderNameBase, testerName) => {
+  // Get the order.
+  const orderJSON = await fs.readFile(`.data/orders/${orderNameBase}.json`, 'utf8');
+  const order = JSON.parse(orderJSON);
+  // Add assignment facts to it.
+  order.assignedBy = assignedBy;
+  order.assignedTime = nowString();
+  order.tester = testerName;
+  // Write it as a job.
+  await fs.writeFile(`.data/jobs/${orderName}.json`, JSON.stringify(order, null, 2));
 };
 // Gets the content of a script or batch.
 const getOrderPart = async (fileNameBase, partDir) => {
@@ -315,69 +328,52 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
-      const {scriptName, batchName, userName, authCode} = bodyObject;
+      const {scriptName, batchName, order, tester, userName, authCode} = bodyObject;
       // If the form submits an order:
       if (requestURL === '/aorta/order') {
-        // If it specifies a script:
-        if (scriptName) {
-          // If it specifies a user name:
-          if (userName) {
-            // If it specifies an authorization code:
-            if (authCode) {
-              // If the user is authorized to submit an order:
-              const userData = userOK(userName, authCode, 'order');
-              if (userData.hasRole) {
-                const options = {};
-                // Get the script.
-                options.script = await getOrderPart(scriptName, 'scripts');
-                // If a batch was specified:
-                if (batchName !== 'None') {
-                  // Get it.
-                  options.batch = await getOrderPart(batchName, 'batches');
-                  // Write the order.
-                  await writeOrder(userName, options);
-                }
-                // Otherwise, i.e. if no batch was specified:
-                else {
-                  // Write the order.
-                  await writeOrder(userName, options);
-                }
-              }
-              else if (userData.isValid) {
-                err('This user is not authorized to submit orders', 'receiving order', response);
-              }
-              else {
-                err(
-                  'Combination of username and authorization code invalid',
-                  'receiving order',
-                  response
-                );
-              }
+        // If the user exists and is authorized to submit orders:
+        if (userOK(userName, authCode, 'order', 'submitting order', response)) {
+          // If a script was specified:
+          if (scriptName) {
+            // Get it.
+            options.script = await getOrderPart(scriptName, 'scripts');
+            // If a batch was specified:
+            if (batchName !== 'None') {
+              // Get it.
+              options.batch = await getOrderPart(batchName, 'batches');
+              // Write the order.
+              await writeOrder(userName, options);
             }
+            // Otherwise, i.e. if no batch was specified:
             else {
-              err('No authorization code entered', 'receiving order');
+              // Write the order.
+              await writeOrder(userName, options);
             }
           }
           else {
-            err('No username entered', 'receiving order');
+            err('No script selected', 'submitting order');
           }
-        }
-        else {
-          err('No script selected', 'receiving order');
         }
       }
       // Otherwise, if the form assigns an order:
       else if (requestURL === '/aorta/assign') {
-        // If the user is valid:
-        const userRoles = await userOK(userName, authCode);
-        if (userRoles) {
-          // If the user has permission to read all orders and jobs:
-          if (userRoles.includes('read')) {
-            // Add them to the query.
-            await addItems(query, 'order', true);
-            await addItems(query, 'job', true);
-            // Serve the selection page.
-            await render('assign', query, response);
+        // If the user exists and is authorized to assign orders:
+        if (userOK(userName, authCode, 'assign', 'assigning order', response)) {
+          // If an order was specified:
+          if (order) {
+            // If a tester was specified:
+            if (tester) {
+              // Assign the order to the tester.
+              await assignOrder(userName, order, tester);
+              // Serve the confirmation page.
+              await render('assigned', query, response);
+            }
+            else {
+              err('No tester selected', 'assigning order', response);
+            }
+          }
+          else {
+            err('No order selected', 'assigning order', response);
           }
         }
       }
