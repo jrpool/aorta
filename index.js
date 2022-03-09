@@ -203,7 +203,9 @@ const writeOrder = async (userName, options, response) => {
     data.batch = options.batch;
   }
   await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
-  await render('ack', {message: `Order ${id} successfully received.`}, response);
+  await render(
+    'ack', {message: `Order successfully received. ID: <strong>${id}</strong>`}, response
+  );
 };
 // Assigns an order to a tester.
 const assignOrder = async (assignedBy, orderNameBase, testerName, response) => {
@@ -338,7 +340,7 @@ const requestHandler = (request, response) => {
             // If a batch was specified or waived:
             if (batchName) {
               // If it was waived:
-              if (batchName === 'None') {
+              if (batchName === 'none') {
                 // Write the order.
                 await writeOrder(userName, options, response);
               }
