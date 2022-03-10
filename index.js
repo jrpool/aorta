@@ -107,7 +107,7 @@ const addItems = async (query, itemType, isRadio) => {
     inputName = 'jobName';
     key = 'jobs';
     dir = 'jobs';
-    specs = item => `${orderSpecs(item)}, tester ${item.tester}`;
+    specs = item => `${orderSpecs(item)}, tester <strong>${item.tester}</strong>`;
   }
   else if (itemType === 'tester') {
     inputName = 'testerName';
