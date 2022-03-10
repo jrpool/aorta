@@ -83,34 +83,40 @@ const orderSpecs = order => {
 };
 // Adds metadata on the scripts, batches, orders, jobs, testers, or reports to a query.
 const addItems = async (query, itemType, isRadio) => {
-  let size, key, dir, specs, addNone;
+  let inputName, key, dir, specs, addNone;
   if (itemType === 'script') {
+    inputName = 'scriptName';
     key = 'scripts';
     dir = 'scripts';
     specs = item => item.what;
   }
   else if (itemType === 'batch') {
+    inputName = 'batchName';
     key = 'batches';
     dir = 'batches';
     specs = item => item.what;
     addNone = true;
   }
   else if (itemType === 'order') {
+    inputName = 'orderName';
     key = 'orders';
     dir = 'orders';
     specs = item => orderSpecs(item);
   }
   else if (itemType === 'job') {
+    inputName = 'jobName';
     key = 'jobs';
     dir = 'jobs';
     specs = item => `${orderSpecs(item)}, tester ${item.tester}`;
   }
   else if (itemType === 'tester') {
+    inputName = 'testerName';
     key = 'testers';
     dir = 'users';
     specs = item => item.name;
   }
   else if (itemType === 'report') {
+    inputName = 'reportName';
     key = 'reports';
     dir = 'reports';
     specs = item => `${item.id}: ${item.userName}`;
@@ -126,13 +132,13 @@ const addItems = async (query, itemType, isRadio) => {
       item.id = fileName.slice(0, -5);
     }
     // Classify the item as valid unless testers are being added and the item has no test role.
-    item.isValid = key === 'testers' ? item.roles.includes('test') : true;
+    item.isValid = itemType === 'tester' ? item.roles.includes('test') : true;
     items.push(item);
   }
   // Add an HTML string encoding radio buttons or list items to the query.
   query[key] = items.filter(item => item.isValid).map(item => {
     if (isRadio) {
-      const input = `<input type="radio" name="${key}" value="${item.id}">`;
+      const input = `<input type="radio" name="${inputName}" value="${item.id}">`;
       return `<div><label>${input} <strong>${item.id}</strong>: ${specs(item)}</label></div>`;
     }
     else {
