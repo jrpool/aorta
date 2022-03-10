@@ -105,12 +105,12 @@ const addItems = async (query, itemType, isRadio) => {
     dir = 'jobs';
     specs = item => `${orderSpecs(item)}, tester ${item.tester}`;
   }
-  else if (itemType = 'tester') {
+  else if (itemType === 'tester') {
     key = 'testers';
     dir = 'users';
     specs = item => item.name;
   }
-  else if (itemType = 'report') {
+  else if (itemType === 'report') {
     key = 'reports';
     dir = 'reports';
     specs = item => `${item.id}: ${item.userName}`;
