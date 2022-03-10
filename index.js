@@ -406,7 +406,7 @@ const requestHandler = (request, response) => {
             // If a tester was specified:
             if (testerName) {
               // Assign the order to the tester and serve an acknowledgement page.
-              await assignOrder(userName, orderName, testerName);
+              await assignOrder(userName, orderName, testerName, response);
             }
             else {
               err('No tester selected', 'assigning order', response);
