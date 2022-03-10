@@ -237,7 +237,10 @@ const assignOrder = async (assignedBy, orderNameBase, testerName, response) => {
   order.assignedBy = assignedBy;
   order.assignedTime = nowString();
   order.tester = testerName;
-  // Write it as a job.
+  // Add arrays for population by Testaro to it.
+  order.log = [];
+  order.reports = [];
+  // Write it as a job, to be used as a Testaro options object in handleRequest().
   await fs.writeFile(`.data/jobs/${orderNameBase}.json`, JSON.stringify(order, null, 2));
   // Delete it as an order.
   await fs.rm(`.data/orders/${orderNameBase}.json`);
