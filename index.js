@@ -402,11 +402,11 @@ const requestHandler = (request, response) => {
         // If the user exists and is authorized to assign orders:
         if (await userOK(userName, authCode, 'assign', 'assigning order', response)) {
           // If an order was specified:
-          if (orders) {
+          if (orderName) {
             // If a tester was specified:
-            if (testers) {
+            if (testerName) {
               // Assign the order to the tester and serve an acknowledgement page.
-              await assignOrder(userName, orders, testers);
+              await assignOrder(userName, orderName, testerName);
             }
             else {
               err('No tester selected', 'assigning order', response);
