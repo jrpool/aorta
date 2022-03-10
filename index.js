@@ -334,7 +334,7 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
-      const {scriptName, batchName, order, tester, userName, authCode} = bodyObject;
+      const {scriptName, batchName, orders, testers, userName, authCode} = bodyObject;
       // If the form submits an order:
       if (requestURL === '/aorta/order') {
         // If the user exists and is authorized to submit orders:
@@ -376,11 +376,11 @@ const requestHandler = (request, response) => {
         // If the user exists and is authorized to assign orders:
         if (userOK(userName, authCode, 'assign', 'assigning order', response)) {
           // If an order was specified:
-          if (order) {
+          if (orders) {
             // If a tester was specified:
-            if (tester) {
+            if (testers) {
               // Assign the order to the tester and serve an acknowledgement page.
-              await assignOrder(userName, order, tester);
+              await assignOrder(userName, orders, testers);
             }
             else {
               err('No tester selected', 'assigning order', response);
