@@ -360,7 +360,7 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
-      const {scriptName, batchName, orders, testers, userName, authCode} = bodyObject;
+      const {scriptName, batchName, orderName, testerName, userName, authCode} = bodyObject;
       // If the form submits an order:
       if (requestURL === '/aorta/order') {
         // If the user exists and is authorized to submit orders:
