@@ -435,11 +435,10 @@ const requestHandler = (request, response) => {
                   batch: 'batches',
                   user: 'users'
                 };
-                const nameBases = await fs
-                .readdir(`.data/${dirs[itemType]}`)
-                .map(fileName => fileName.slice(0, -5));
-                if (nameBases.includes(fileName)) {
-                  err('That filename already exists.', `adding ${itemType}`, response);
+                const fileNames = await fs.readdir(`.data/${dirs[itemType]}`)
+                const fileNameBases = fileNames.map(fileName => fileName.slice(0, -5));
+                if (fileNameBases.includes(fileNameBase)) {
+                  err(`An existing ${itemType} has that filename.`, `adding ${itemType}`, response);
                 }
                 // Otherwise, i.e. if it is new:
                 else {
