@@ -141,6 +141,19 @@ const addItems = async (query, itemType, isRadio) => {
   })
   .join('\n');
 };
+// Adds credentials inputs to a query
+const addYou = query => {
+  const youLines = [
+    '<fieldset>',
+    '<legend>',
+    'You',
+    '</legend>',
+    '<div><label>Username <input name="userName" size="10"></label></div>',
+    '<div><label>Authorization code <input type="password" name="authCode" size="10"></label></div>',
+    '</fieldset>'
+  ];
+  query.you = youLines.join('\n');
+};
 // Returns whether a user exists and has a role.
 const userOK = async (userName, authCode, role, context, response) => {
   // If a user name was specified:
@@ -273,6 +286,7 @@ const requestHandler = (request, response) => {
         // Add the page parameters to the query.
         await addItems(query, 'script', true);
         await addItems(query, 'batch', true);
+        addYou(query);
         // Serve the page.
         await render('order', query, response);
       }
@@ -289,6 +303,7 @@ const requestHandler = (request, response) => {
         // Add the page parameters to the query.
         await addItems(query, 'order', true);
         await addItems(query, 'tester', true);
+        addYou(query);
         // Serve the page.
         await render('assign', query, response);
       }
@@ -296,6 +311,7 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/report') {
         // Add the page parameters to the query.
         await addItems(query, 'job', false);
+        addYou(query);
         // Serve the page.
         await render('report', query, response);
       }
@@ -303,11 +319,13 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/get') {
         // Add the page parameters to the query.
         await addItems(query, 'report', true);
+        addYou(query);
         // Serve the page.
         await render('get', query, response);
       }
       // Otherwise, if it is the item-addition page:
       else if (requestURL === '/aorta/add') {
+        addYou(query);
         // Serve the page.
         await render('add', query, response);
       }

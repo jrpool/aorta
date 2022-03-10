@@ -13,22 +13,17 @@
       <h1>Aorta assignment</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
       <form action="/aorta/assign" method="post" class="flex">
-        <section>
-          <h2>Assign an order</h2>
-          <fieldset>
-            <legend>Order</legend>
-            __orders__
-          </fieldset>
-          <fieldset>
-            <legend>Tester</legend>
-            __testers__
-          </fieldset>
-          <p><label>Your username <input name="userName" size="10"></label></p>
-          <p><label>
-            Your authorization code <input name="authCode" type="password" size="10">
-          </label></p>
-          <p><button>Submit</button></p>
-        </section>
+        <h2>Assign an order</h2>
+        <fieldset>
+          <legend>Order</legend>
+          __orders__
+        </fieldset>
+        <fieldset>
+          <legend>Tester</legend>
+          __testers__
+        </fieldset>
+        __you__
+        <p><button>Submit</button></p>
       </form>
     </main>
   </body>

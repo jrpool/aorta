@@ -13,25 +13,20 @@
       <h1>Aorta order</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
       <form action="/aorta/order" method="post" class="flex">
-        <section>
-          <h2>Submit an order</h2>
-          <fieldset>
-            <legend>Script</legend>
-            __scripts__
-          </fieldset>
-          <fieldset>
-            <legend>Batch</legend>
-            <div><label>
-              <input type="radio" name="batches" value="none">
-              <strong>NONE</strong>: Do not use a batch
-            </label></div>
-            __batches__
-          </fieldset>
-          <p><label>Your username <input name="userName" size="10"></label></p>
-          <p><label>
-            Your authorization code <input type="password" name="authCode" size="10">
-          </label></p>
-          </section>
+        <h2>Submit an order</h2>
+        <fieldset>
+          <legend>Script</legend>
+          __scripts__
+        </fieldset>
+        <fieldset>
+          <legend>Batch</legend>
+          <div><label>
+            <input type="radio" name="batches" value="none">
+            <strong>NONE</strong>: Do not use a batch
+          </label></div>
+          __batches__
+        </fieldset>
+        __you__
         <p><button>Submit</button></p>
       </form>
     </main>
