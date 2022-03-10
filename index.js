@@ -360,7 +360,9 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
-      const {scriptName, batchName, orderName, testerName, userName, authCode} = bodyObject;
+      const {
+        scriptName, batchName, orderName, testerName, fileNameBase, userName, authCode
+      } = bodyObject;
       // If the form submits an order:
       if (requestURL === '/aorta/order') {
         // If the user exists and is authorized to submit orders:
@@ -417,8 +419,62 @@ const requestHandler = (request, response) => {
           }
         }
       }
+      // Otherwise, if the form adds an item:
+      else if (requestURL === '/aorta/add') {
+        // If the user exists and is authorized to add items:
+        if (await userOK(userName, authCode, 'manage', 'adding item', response)) {
+          // If an item type was specified:
+          if (itemType) {
+            // If a filename base was specified:
+            if (fileNameBase) {
+              // If the filename base is valid:
+              if (/^[a-z0-9]+$/.test(fileNameBase)) {
+                // If it duplicates an existing file name:
+                const dirs = {
+                  script: 'scripts',
+                  batch: 'batches',
+                  user: 'users'
+                };
+                const nameBases = await fs
+                .readdir(`.data/${dirs[itemType]}`)
+                .map(fileName => fileName.slice(0, -5));
+                if (nameBases.includes(fileName)) {
+                  err('That filename already exists.', `adding ${itemType}`, response);
+                }
+                // Otherwise, i.e. if it is new:
+                else {
+                  // If content was specified:
+                  if (item) {
+                    // If it is valid JSON:
+                    try {
+                      JSON.parse(item);
+                      // Write the file.
+                      await fs.writeFile(`.data/${dirs[itemType]}/${fileNameBase}.json`);
+                    }
+                    catch(error) {
+                      err(error.message, `adding ${itemType}`, response);
+                    }
+                  }
+                  else {
+                    err('File content missing', `adding ${itemType}`, response)
+                  }
+                }
+              }
+              else {
+                err('File name invalid', `adding ${itemType}`, response);
+              }
+            }
+            else {
+              err('File name missing', `adding ${itemType}`, response);
+            }
+          }
+          else {
+            err('No item type selected', `adding ${itemType}`, response);
+          }
+        }
+      }
+      // Otherwise, i.e. if the form is unknown:
       else {
-        // Serve an error page.
         err('Invalid request submitted', 'in Aorta', response);
       }
     }
