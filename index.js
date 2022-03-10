@@ -133,7 +133,7 @@ const addItems = async (query, itemType, isRadio) => {
   query[key] = items.filter(item => item.isValid).map(item => {
     if (isRadio) {
       const input = `<input type="radio" name="${key}" value="${item.id}">`;
-      return `<p><label>${input} <strong>${item.id}</strong>: ${specs(item)}</label></p>`;
+      return `<div><label>${input} <strong>${item.id}</strong>: ${specs(item)}</label></div>`;
     }
     else {
       return `<li><strong>${item.id}</strong>: ${specs(item)}</li>`;
