@@ -154,8 +154,8 @@ const addYou = query => {
     '<legend>',
     'You',
     '</legend>',
-    '<div><label>Username <input name="userName" size="10"></label></div>',
-    '<div><label>Authorization code <input type="password" name="authCode" size="10"></label></div>',
+    '<div><label>Username <input name="userName" size="10" required></label></div>',
+    '<div><label>Authorization code <input type="password" name="authCode" size="10" required></label></div>',
     '</fieldset>'
   ];
   query.you = youLines.join('\n');
@@ -361,7 +361,15 @@ const requestHandler = (request, response) => {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
       const {
-        scriptName, batchName, orderName, testerName, itemType, fileNameBase, userName, authCode
+        scriptName,
+        batchName,
+        orderName,
+        testerName,
+        itemType,
+        fileNameBase,
+        item,
+        userName,
+        authCode
       } = bodyObject;
       // If the form submits an order:
       if (requestURL === '/aorta/order') {
