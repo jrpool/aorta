@@ -276,13 +276,13 @@ const requestHandler = (request, response) => {
         // Serve the page.
         await render('order', query, response);
       }
-      // Otherwise, if it is the orders page:
-      else if (requestURL === '/aorta/orders') {
+      // Otherwise, if it is the orders and jobs page:
+      else if (requestURL === '/aorta/orderjobs') {
         // Add the page parameters to the query.
         await addItems(query, 'order', false);
         await addItems(query, 'job', false);
         // Serve the page.
-        await render('orders', query, response);
+        await render('orderjobs', query, response);
       }
       // Otherwise, if it is the assignment page:
       else if (requestURL === '/aorta/assign') {
