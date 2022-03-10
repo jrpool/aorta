@@ -456,7 +456,7 @@ const requestHandler = (request, response) => {
                     try {
                       JSON.parse(item);
                       // Write the file.
-                      await fs.writeFile(`.data/${dirs[itemType]}/${fileNameBase}.json`);
+                      await fs.writeFile(`.data/${dirs[itemType]}/${fileNameBase}.json`, item);
                     }
                     catch(error) {
                       err(error.message, `adding ${itemType}`, response);
