@@ -394,7 +394,7 @@ const requestHandler = (request, response) => {
       // Otherwise, if the form assigns an order:
       else if (requestURL === '/aorta/assign') {
         // If the user exists and is authorized to assign orders:
-        if (userOK(userName, authCode, 'assign', 'assigning order', response)) {
+        if (await userOK(userName, authCode, 'assign', 'assigning order', response)) {
           // If an order was specified:
           if (orders) {
             // If a tester was specified:

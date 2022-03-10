@@ -30,6 +30,9 @@ caption {
   font-weight: 700;
   color: #c00;
 }
+fieldset {
+  width: max-content;
+}
 form {
   margin-top: 1rem;
 }
