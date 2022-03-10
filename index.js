@@ -394,7 +394,7 @@ const requestHandler = (request, response) => {
                 // Get the batch and add it to the order options.
                 options.batchName = batchName;
                 options.batch = await getOrderPart(batchName, 'batches');
-                // Write the order.
+                // Write the order and serve an acknowledgement page.
                 await writeOrder(userName, options, response);
               }
             }
@@ -457,6 +457,12 @@ const requestHandler = (request, response) => {
                       JSON.parse(item);
                       // Write the file.
                       await fs.writeFile(`.data/${dirs[itemType]}/${fileNameBase}.json`, item);
+                      // Serve an acknowledgement page.
+                      await render(
+                        'ack',
+                        {message: `Success: New ${itemType} <strong>${fileNameBase}</strong> created.`},
+                        response
+                      );
                     }
                     catch(error) {
                       err(error.message, `adding ${itemType}`, response);
