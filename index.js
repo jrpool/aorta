@@ -361,7 +361,7 @@ const requestHandler = (request, response) => {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
       const {
-        scriptName, batchName, orderName, testerName, fileNameBase, userName, authCode
+        scriptName, batchName, orderName, testerName, itemType, fileNameBase, userName, authCode
       } = bodyObject;
       // If the form submits an order:
       if (requestURL === '/aorta/order') {
