@@ -301,6 +301,8 @@ const requestHandler = (request, response) => {
       }
       // Otherwise, if it is the report-retrieval page:
       else if (requestURL === '/aorta/get') {
+        // Add the page parameters to the query.
+        await addItems(query, 'report', true);
         // Serve the page.
         await render('get', query, response);
       }
