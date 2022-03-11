@@ -375,6 +375,7 @@ const requestHandler = (request, response) => {
         scriptName,
         batchName,
         orderName,
+        jobName,
         testerName,
         report,
         itemType,
