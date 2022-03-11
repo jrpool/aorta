@@ -83,7 +83,7 @@ const orderSpecs = order => {
 };
 // Adds metadata on the scripts, batches, orders, jobs, testers, or reports to a query.
 const addItems = async (query, itemType, isRadio) => {
-  let inputName, key, dir, specs, addNone;
+  let inputName, key, dir, specs;
   if (itemType === 'script') {
     inputName = 'scriptName';
     key = 'scripts';
@@ -135,10 +135,10 @@ const addItems = async (query, itemType, isRadio) => {
     item.isValid = itemType === 'tester' ? item.roles.includes('test') : true;
     items.push(item);
   }
-  // Add an HTML string encoding radio buttons or list items to the query.
+  // Add an HTML string encoding required radio buttons or list items to the query.
   query[key] = items.filter(item => item.isValid).map(item => {
     if (isRadio) {
-      const input = `<input type="radio" name="${inputName}" value="${item.id}">`;
+      const input = `<input type="radio" name="${inputName}" value="${item.id}" required>`;
       return `<div><label>${input} <strong>${item.id}</strong>: ${specs(item)}</label></div>`;
     }
     else {
