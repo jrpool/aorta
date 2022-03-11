@@ -1,0 +1,50 @@
+{
+  "id": "iv5z3",
+  "userName": "userW",
+  "orderTime": "2022-03-09T16:11:56",
+  "scriptName": "sample",
+  "batchName": "sample",
+  "script": {
+    "isValid": true,
+    "content": {
+      "what": "Sample Testaro script with 1 test",
+      "strict": true,
+      "commands": [
+        {
+          "type": "launch",
+          "which": "chromium",
+          "what": "Chromium browser"
+        },
+        {
+          "type": "url",
+          "which": "https://example.com/",
+          "what": "simple page, replaced if there is a batch"
+        },
+        {
+          "type": "test",
+          "which": "bulk",
+          "what": "bulk"
+        }
+      ]
+    }
+  },
+  "batch": {
+    "isValid": true,
+    "content": {
+      "what": "Sample batch with 2 hosts",
+      "hosts": [
+        {
+          "which": "https://www.w3.org/",
+          "what": "W3C"
+        },
+        {
+          "which": "https://www.wikimedia.org/",
+          "what": "Wikimedia"
+        }
+      ]
+    }
+  },
+  "assignedBy": "userX",
+  "assignedTime": "2022-03-10T17:19:19",
+  "tester": "userY"
+}

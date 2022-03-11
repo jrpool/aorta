@@ -1,0 +1,31 @@
+{
+  "id": "jegbv",
+  "userName": "userX",
+  "orderTime": "2022-03-10T17:11:45",
+  "scriptName": "sample",
+  "batchName": "",
+  "script": {
+    "isValid": true,
+    "content": {
+      "what": "Sample script with 1 test",
+      "strict": true,
+      "commands": [
+        {
+          "type": "launch",
+          "which": "chromium",
+          "what": "Chromium browser"
+        },
+        {
+          "type": "url",
+          "which": "https://example.com/",
+          "what": "simple page, replaced if there is a batch"
+        },
+        {
+          "type": "test",
+          "which": "bulk",
+          "what": "bulk"
+        }
+      ]
+    }
+  }
+}

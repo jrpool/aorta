@@ -1,0 +1,7 @@
+{
+  "id": "userY",
+  "name": "Jane Roe",
+  "email": "roe@example.org",
+  "authCode": "uvwxyz",
+  "roles": ["manage", "order", "assign", "test", "read"]
+}

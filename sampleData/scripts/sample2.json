@@ -1,0 +1,27 @@
+{
+  "what": "Sample script with 2 tests",
+  "strict": true,
+  "commands": [
+    {
+      "type": "launch",
+      "which": "chromium",
+      "what": "Chromium browser"
+    },
+    {
+      "type": "url",
+      "which": "https://example.com/",
+      "what": "Example site"
+    },
+    {
+      "type": "test",
+      "which": "bulk",
+      "what": "bulk"
+    },
+    {
+      "type": "test",
+      "which": "zIndex",
+      "withItems": false,
+      "what": "zIndex"
+    }
+  ]
+}

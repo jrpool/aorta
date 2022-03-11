@@ -32,6 +32,7 @@ caption {
 }
 fieldset {
   width: max-content;
+  margin-top: 1rem;
 }
 form {
   margin-top: 1rem;

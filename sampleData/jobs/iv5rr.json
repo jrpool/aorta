@@ -1,0 +1,34 @@
+{
+  "id": "iv5rr",
+  "userName": "userX",
+  "orderTime": "2022-03-09T16:11:30",
+  "scriptName": "sample",
+  "batchName": "",
+  "script": {
+    "isValid": true,
+    "content": {
+      "what": "Sample Testaro script with 1 test",
+      "strict": true,
+      "commands": [
+        {
+          "type": "launch",
+          "which": "chromium",
+          "what": "Chromium browser"
+        },
+        {
+          "type": "url",
+          "which": "https://example.com/",
+          "what": "simple page, replaced if there is a batch"
+        },
+        {
+          "type": "test",
+          "which": "bulk",
+          "what": "bulk"
+        }
+      ]
+    }
+  },
+  "assignedBy": "",
+  "assignedTime": "2022-03-10T16:44:25",
+  "tester": "userY"
+}
