@@ -303,6 +303,7 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/orders') {
         // Add the page parameters to the query.
         await addItems(query, 'order', true);
+        addYou(query);
         // Serve the page.
         await render('orders', query, response);
       }
@@ -310,6 +311,7 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/jobs') {
         // Add the page parameters to the query.
         await addItems(query, 'job', true);
+        addYou(query);
         // Serve the page.
         await render('jobs', query, response);
       }
