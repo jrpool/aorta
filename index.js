@@ -290,6 +290,20 @@ const requestHandler = (request, response) => {
         // Serve the page.
         await render('index', {}, response);
       }
+      // Otherwise, if it is the scripts page:
+      else if (requestURL === '/aorta/scripts') {
+        // Add the page parameters to the query.
+        await addItems(query, 'script', true);
+        // Serve the page.
+        await render('scripts', query, response);
+      }
+      // Otherwise, if it is the batches page:
+      else if (requestURL === '/aorta/batches') {
+        // Add the page parameters to the query.
+        await addItems(query, 'batch', true);
+        // Serve the page.
+        await render('batches', query, response);
+      }
       // Otherwise, if it is the ordering page:
       else if (requestURL === '/aorta/order') {
         // Add the page parameters to the query.
@@ -384,7 +398,33 @@ const requestHandler = (request, response) => {
         userName,
         authCode
       } = bodyObject;
-      // If the form submits an order:
+      // If the form asks to see a script:
+      if (requestURL === '/aorta/seeScript') {
+        // If a script was specified:
+        if (scriptName) {
+          // Get it.
+          const script = await fs.readFile(`.data/scripts/${scriptName}.json`, 'utf8');
+          // Serve the response page.
+          await render('seeScript', {script}, response);
+        }
+        else {
+          err('No script selected', 'retrieving script', response);
+        }
+      }
+      // Otherwise, if the form asks to see a batch:
+      else if (requestURL === '/aorta/seeBatch') {
+        // If a script was specified:
+        if (batchName) {
+          // Get it.
+          const batch = await fs.readFile(`.data/batches/${batchName}.json`, 'utf8');
+          // Serve the response page.
+          await render('seeBatch', {batch}, response);
+        }
+        else {
+          err('No batch selected', 'retrieving batch', response);
+        }
+      }
+      // Otherwise, if the form submits an order:
       if (requestURL === '/aorta/order') {
         // If the user exists and is authorized to submit orders:
         if (await userOK(userName, authCode, 'order', 'submitting order', response)) {
