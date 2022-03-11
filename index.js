@@ -405,7 +405,11 @@ const requestHandler = (request, response) => {
           // Get it.
           const script = await fs.readFile(`.data/scripts/${scriptName}.json`, 'utf8');
           // Serve the response page.
-          await render('seeScript', {script}, response);
+          const query = {
+            scriptName,
+            script
+          };
+          await render('seeScript', query, response);
         }
         else {
           err('No script selected', 'retrieving script', response);
@@ -418,7 +422,11 @@ const requestHandler = (request, response) => {
           // Get it.
           const batch = await fs.readFile(`.data/batches/${batchName}.json`, 'utf8');
           // Serve the response page.
-          await render('seeBatch', {batch}, response);
+          const query = {
+            batchName,
+            batch
+          };
+          await render('seeBatch', query, response);
         }
         else {
           err('No batch selected', 'retrieving batch', response);
