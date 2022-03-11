@@ -181,7 +181,7 @@ const userOK = async (userName, authCode, role, context, response) => {
           }
           // Otherwise, i.e. if the user does not have the specified role:
           else {
-            err('You are not an authorized user', context, response);
+            err(`You do not have <q>${role}</q> permission`, context, response);
             return false;
           }
         }
