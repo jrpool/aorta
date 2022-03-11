@@ -26,6 +26,33 @@ const {parse} = require('querystring');
 
 // ==== OPERATION UTILITIES ====
 
+// Serves content as a page.
+const servePage = async (content, location, response) => {
+  response.setHeader('Content-Type', 'text/html');
+  response.setHeader('Content-Location', location);
+  await response.end(content);
+};
+// Replaces the placeholders in a page and serves the page.
+const render = async (nameBase, query, response) => {
+  if (! response.writableEnded) {
+    // Get the page.
+    const page = await fs.readFile(`./${nameBase}.html`, 'utf8');
+    // Replace its placeholders with eponymous query parameters.
+    const renderedPage = page.replace(/__([a-zA-Z]+)__/g, (ph, qp) => query[qp]);
+    // Serve the page.
+    await servePage(renderedPage, `/aorta/${nameBase}.html`, response);
+  }
+};
+// Serves a resource.
+const serveResource = async (fileName, contentType, encoding, response) => {
+  const readArgs = [fileName];
+  if (encoding) {
+    readArgs.push(encoding);
+  }
+  const content = await fs.readFile(...readArgs);
+  response.setHeader('Content-Type', contentType);
+  response.end(content);
+};
 // Processes a thrown error.
 const err = async (error, context, response) => {
   let problem = error;
@@ -44,33 +71,6 @@ const err = async (error, context, response) => {
   };
   await render('error', query, response);
   return '';
-};
-// Serves content as a page.
-const servePage = async (content, location, response) => {
-  response.setHeader('Content-Type', 'text/html');
-  response.setHeader('Content-Location', location);
-  await response.end(content);
-};
-// Replaces the placeholders in a page and serves the page.
-const render = async (nameBase, query, response) => {
-  if (! response.writableEnded) {
-    // Get the page.
-    const page = await fs.readFile(`./${nameBase}.html`, 'utf8');
-    // Replace its placeholders with eponymous query parameters.
-    const renderedPage = page.replace(/__([a-zA-Z]+)__/g, (ph, qp) => query[qp]);
-    // Serve the page.
-    servePage(renderedPage, `/aorta/${nameBase}.html`, response);
-  }
-};
-// Serves a resource.
-const serveResource = async (fileName, contentType, encoding, response) => {
-  const readArgs = [fileName];
-  if (encoding) {
-    readArgs.push(encoding);
-  }
-  const content = await fs.readFile(...readArgs);
-  response.setHeader('Content-Type', contentType);
-  response.end(content);
 };
 
 // ==== REQUEST-PROCESSING UTILITIES ====
@@ -433,7 +433,7 @@ const requestHandler = (request, response) => {
         }
       }
       // Otherwise, if the form submits an order:
-      if (requestURL === '/aorta/order') {
+      else if (requestURL === '/aorta/order') {
         // If the user exists and is authorized to submit orders:
         if (await userOK(userName, authCode, 'order', 'submitting order', response)) {
           // If a script was specified:
