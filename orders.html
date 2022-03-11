@@ -2,7 +2,7 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <title>Reporting | Aorta</title>
+    <title>Orders | Aorta</title>
     <meta name="description" content="Automated Order Router for Tests of Accessibility (Aorta)">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/aorta/style.css">
@@ -10,14 +10,13 @@
   </head>
   <body>
     <main>
-      <h1>Aorta Reporting</h1>
+      <h1>See an Aorta order</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
-      <form action="/aorta/report" method="post" class="flex">
-        <h2>Submit job report</h2>
-        <p><label for="report">Report (Testaro options object in JSON format)</label></p>
-        <p><textarea id="report" name="report" rows="20" cols="80"></textarea></p>
-        __you__
-        <p><button>Submit</button></p>
+      <form action="/aorta/seeOrder" method="post" class="flex">
+        <fieldset>
+          <legend>Order</legend>
+          __orders__
+        </fieldset>
       </form>
     </main>
   </body>

@@ -299,13 +299,19 @@ const requestHandler = (request, response) => {
         // Serve the page.
         await render('order', query, response);
       }
-      // Otherwise, if it is the orders and jobs page:
-      else if (requestURL === '/aorta/orderjobs') {
+      // Otherwise, if it is the orders page:
+      else if (requestURL === '/aorta/orders') {
         // Add the page parameters to the query.
-        await addItems(query, 'order', false);
-        await addItems(query, 'job', false);
+        await addItems(query, 'order', true);
         // Serve the page.
-        await render('orderjobs', query, response);
+        await render('orders', query, response);
+      }
+      // Otherwise, if it is the jobs page:
+      else if (requestURL === '/aorta/jobs') {
+        // Add the page parameters to the query.
+        await addItems(query, 'job', true);
+        // Serve the page.
+        await render('jobs', query, response);
       }
       // Otherwise, if it is the assignment page:
       else if (requestURL === '/aorta/assign') {
@@ -368,6 +374,7 @@ const requestHandler = (request, response) => {
         batchName,
         orderName,
         testerName,
+        report,
         itemType,
         fileNameBase,
         item,
@@ -430,6 +437,38 @@ const requestHandler = (request, response) => {
           }
         }
       }
+      // Otherwise, if the form asks to see an order:
+      else if (requestURL === '/aorta/seeOrder') {
+        // If the user exists:
+        if (await userOK(userName, authCode, '', 'retrieving order', response)) {
+          // If an order was specified:
+          if (orderName) {
+            // Get it.
+            const order = await fs.readFile(`.data/orders/${orderName}.json`, 'utf8');
+            // Serve the response page.
+            await render('seeOrder', {order}, response);
+          }
+          else {
+            err('No order selected', 'retrieving order', response);
+          }
+        }
+      }
+      // Otherwise, if the form asks to see a job:
+      else if (requestURL === '/aorta/seeJob') {
+        // If the user exists:
+        if (await userOK(userName, authCode, '', 'retrieving job', response)) {
+          // If a job was specified:
+          if (jobName) {
+            // Get it.
+            const job = await fs.readFile(`.data/jobs/${jobName}.json`, 'utf8');
+            // Serve the response page.
+            await render('seeJob', {job}, response);
+          }
+          else {
+            err('No job selected', 'retrieving job', response);
+          }
+        }
+      }
       // Otherwise, if the form adds an item:
       else if (requestURL === '/aorta/add') {
         // If the user exists and is authorized to add items:
@@ -486,6 +525,32 @@ const requestHandler = (request, response) => {
           }
           else {
             err('No item type selected', `adding ${itemType}`, response);
+          }
+        }
+      }
+      // Otherwise, if the form submits a job report:
+      else if (requestURL === '/aorta/report') {
+        // If the user exists and is authorized to perform jobs:
+        if (await userOK(userName, authCode, 'test', 'receiving report', response)) {
+          // If content was specified:
+          if (report) {
+            // If it is valid JSON:
+            try {
+              // Get its name.
+              const data = JSON.parse(report);
+              const fileNameBase = data.id;
+              // Write the file.
+              await fs.writeFile(`.data/reports/${fileNameBase}.json`, report);
+              // Serve an acknowledgement page.
+              await render(
+                'ack',
+                {message: `Success: New report <strong>${fileNameBase}</strong> received.`},
+                response
+              );
+            }
+            catch(error) {
+              err(error.message, 'receiving report', response);
+            }
           }
         }
       }

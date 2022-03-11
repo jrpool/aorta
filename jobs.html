@@ -2,7 +2,7 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <title>Orders and jobs | Aorta</title>
+    <title>Jobs | Aorta</title>
     <meta name="description" content="Automated Order Router for Tests of Accessibility (Aorta)">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/aorta/style.css">
@@ -10,12 +10,14 @@
   </head>
   <body>
     <main>
-      <h1>Aorta orders and jobs</h1>
+      <h1>See an Aorta job</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
-      <h2>Orders</h2>
-      <ul>__orders__</ul>
-      <h2>Jobs</h2>
-      <ul>__jobs__</ul>
+      <form action="/aorta/seeJob" method="post" class="flex">
+        <fieldset>
+          <legend>Job</legend>
+          __jobs__
+        </fieldset>
+      </form>
     </main>
   </body>
 </html>
