@@ -12,35 +12,24 @@
     <main>
       <h1>Aorta</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
-      <h2>Your options</h2>
-      <p>If you are authorized, you can:</p>
-      <h3>See</h3>
-      <ol>
-        <li><a href="/aorta/seeScript">Script</a></li>
-        <li><a href="/aorta/seeBatch">Batch</a></li>
-        <li><a href="/aorta/seeOrder">Order</a></li>
-        <li><a href="/aorta/seeJob">Job</a></li>
-        <li><a href="/aorta/seeReport">Report</a></li>
-        <li><a href="/aorta/seeUser">User</a></li>
-      </ol>
-      <h3>Submit</h3>
-      <ol>
-        <li><a href="/aorta/addOrder">Order</a></li>
-        <li><a href="/aorta/addAssignment">Assignment</a></li>
-        <li><a href="/aorta/addReport">Report</a></li>
-        <li><a href="/aorta/addScript">Script</a></li>
-        <li><a href="/aorta/addBatch">Batch</a></li>
-        <li><a href="/aorta/addUser">User</a></li>
-      </ol>
-      <h3>Remove</h3>
-      <ol>
-        <li><a href="/aorta/rmScript">Remove a script</a></li>
-        <li><a href="/aorta/rmBatch">Remove a batch</a></li>
-        <li><a href="/aorta/rmOrder">Remove an order</a></li>
-        <li><a href="/aorta/rmJob">Remove a job</a></li>
-        <li><a href="/aorta/rmReport">Remove a report</a></li>
-        <li><a href="/aorta/rmUser">Remove a user</a></li>
-      </ol>
+      <form action="/aorta/action" method="post" class="flex">
+        <fieldset>
+          <legend>Action</legend>
+          <div><label><input type="radio" name="action" value="see" required> See</label></div>
+          <div><label><input type="radio" name="action" value="create" required> Create</label></div>
+          <div><label><input type="radio" name="action" value="remove" required> Remove</label></div>
+        </fieldset>
+        <fieldset>
+          <legend>Do this to</legend>
+          <div><label><input type="radio" name="targetType" value="script" required> Script</label></div>
+          <div><label><input type="radio" name="targetType" value="batch" required> Batch</label></div>
+          <div><label><input type="radio" name="targetType" value="order" required> Order</label></div>
+          <div><label><input type="radio" name="targetType" value="job" required> Job</label></div>
+          <div><label><input type="radio" name="targetType" value="report" required> Report</label></div>
+          <div><label><input type="radio" name="targetType" value="user" required> User</label></div>
+        </fieldset>
+        <p><button>Submit</button></p>
+      </form>
     </main>
   </body>
 </html>

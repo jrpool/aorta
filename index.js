@@ -91,60 +91,47 @@ const metadata = {
   tester: ['Testers', 'users']
 };
 // Adds the scripts, batches, orders, jobs, users, testers, or reports to a query.
-const addItems = async (query, itemType, key, isRadio) => {
-  // Identify the display format, validity criterion, and directory of items of the specified type.
-  let specs;
-  let isValid = () => true;
-  if (itemType === 'script') {
-    specs = item => item.what;
-  }
-  else if (itemType === 'batch') {
-    specs = item => item.what;
-  }
-  else if (itemType === 'order') {
-    specs = item => orderSpecs(item);
-  }
-  else if (itemType === 'job') {
-    specs = item => `${orderSpecs(item)}, tester <strong>${item.tester}</strong>`;
-  }
-  else if (itemType === 'user') {
-    specs = item => item.name;
-  }
-  else if (itemType === 'tester') {
-    specs = item => item.name;
-    isValid = item => item.roles.includes('test');
-  }
-  else if (itemType === 'report') {
-    specs = item => `${item.id}: ${item.userName}`;
-  }
-  const dir = metadata[itemType][1];
-  // For each item:
-  const itemFileNames = await fs.readdir(`.data/${dir}`);
-  let items = [];
-  for (const fileName of itemFileNames) {
+const addTargetParams = async (query, targetType, htmlKey, isRadio) => {
+  // Identify the display format and validity criterion of targets of the specified type.
+  const specs = {
+    script: target => target.what,
+    batch: target => target.what,
+    order: target => orderSpecs(target),
+    job: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
+    report: target => `${target.id}: ${target.userName}`,
+    user: target => target.name,
+    tester: target => target.name
+  };
+  const isValid = targetType === 'tester' ? target => target.roles.includes('test') : true;
+  const dir = metadata[targetType][1];
+  // For each target:
+  const fileNames = await fs.readdir(`.data/${dir}`);
+  let targets = [];
+  for (const fileName of fileNames) {
     // Get it.
-    const itemJSON = await fs.readFile(`.data/${dir}/${fileName}`);
-    const item = JSON.parse(itemJSON);
-    // If the item has no 'id' property (i.e. is a script or batch):
-    if (! item.id) {
+    const targetJSON = await fs.readFile(`.data/${dir}/${fileName}`);
+    const target = JSON.parse(targetJSON);
+    // If the target has no 'id' property (i.e. is a script or batch):
+    if (! target.id) {
       // Use its filename base as the 'id' property.
-      item.id = fileName.slice(0, -5);
+      target.id = fileName.slice(0, -5);
     }
-    items.isValid = isValid(item);
-    // Add it to the array of items.
-    items.push(item);
+    // Add the target to the array of targets, if valid.
+    if (isValid(target)) {
+      targets.push(target);
+    }
   }
   // Add the page parameters to the query.
-  query.ItemsName = metadata[itemType][0];
-  query.itemType = itemType;
-  query.ItemType = `${itemType[0].toUpperCase()}${itemType.slice(1)}`;
-  query[key] = items.filter(item => item.isValid).map(item => {
+  query.TargetsName = metadata[targetType][0];
+  query.targetType = targetType;
+  query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
+  query[htmlKey] = items.map(target => {
     if (isRadio) {
-      const input = `<input type="radio" name="${items}" value="${item.id}" required>`;
-      return `<div><label>${input} <strong>${item.id}</strong>: ${specs(item)}</label></div>`;
+      const input = `<input type="radio" name="${targets}" value="${target.id}" required>`;
+      return `<div><label>${input} <strong>${target.id}</strong>: ${specs(target)}</label></div>`;
     }
     else {
-      return `<li><strong>${item.id}</strong>: ${specs(item)}</li>`;
+      return `<li><strong>${target.id}</strong>: ${specs(target)}</li>`;
     }
   })
   .join('\n');
@@ -326,14 +313,6 @@ const requestHandler = (request, response) => {
         // Serve the page.
         await render('report', query, response);
       }
-      // Otherwise, if it is the report-retrieval page:
-      else if (requestURL === '/aorta/get') {
-        // Add the page parameters to the query.
-        await addItems(query, 'report', true);
-        addYou(query);
-        // Serve the page.
-        await render('get', query, response);
-      }
       // Otherwise, if it is the item-addition page:
       else if (requestURL === '/aorta/add') {
         addYou(query);
@@ -378,6 +357,18 @@ const requestHandler = (request, response) => {
         userName,
         authCode
       } = bodyObject;
+      // If the form identifies an action and a target type:
+      if (requestURL === '/aorta/action') {
+        const {action, targetType} = bodyObject;
+        // If the action is to see:
+        if (action === 'see') {
+          // Create a query.
+          const query = {targetType};
+          await addTargetParams(query, targetType, 'targets', true);
+          // Serve the target-choice page.
+          await render('seeTargets', query, response);
+        }
+      }
       // If the form asks to see something:
       if (requestURL.startsWith('/aorta/see')) {
         // If the thing to be seen was specified:
