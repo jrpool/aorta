@@ -81,7 +81,7 @@ const orderSpecs = order => {
   const batchPart = order.batchName ? `, batch <strong>${order.batchName}</strong>` : '';
   return `${mainPart}${batchPart}`;
 };
-const metadata = {
+const targetStrings = {
   script: ['Scripts', 'scripts'],
   batch: ['Batches', 'batches'],
   order: ['Orders', 'orders'],
@@ -90,19 +90,20 @@ const metadata = {
   user: ['Users', 'users'],
   tester: ['Testers', 'users']
 };
+const targetSpecs = {
+  script: target => target.what,
+  batch: target => target.what,
+  order: target => orderSpecs(target),
+  job: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
+  report: target => `${target.id}: ${target.userName}`,
+  user: target => target.name,
+  tester: target => target.name
+};
 // Adds the scripts, batches, orders, jobs, users, testers, or reports to a query.
-const addTargetParams = async (query, targetType, htmlKey, isRadio) => {
+const addTargetParams = async (query, htmlKey, isRadio) => {
+  const {targetType} = query;
   // Identify the display format and validity criterion of targets of the specified type.
-  const specs = {
-    script: target => target.what,
-    batch: target => target.what,
-    order: target => orderSpecs(target),
-    job: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
-    report: target => `${target.id}: ${target.userName}`,
-    user: target => target.name,
-    tester: target => target.name
-  };
-  const isValid = targetType === 'tester' ? target => target.roles.includes('test') : true;
+  const isValid = target => targetType === 'tester' ? target.roles.includes('test') : true;
   const dir = metadata[targetType][1];
   // For each target:
   const fileNames = await fs.readdir(`.data/${dir}`);
@@ -123,9 +124,8 @@ const addTargetParams = async (query, targetType, htmlKey, isRadio) => {
   }
   // Add the page parameters to the query.
   query.TargetsName = metadata[targetType][0];
-  query.targetType = targetType;
   query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
-  query[htmlKey] = items.map(target => {
+  query[htmlKey] = targets.map(target => {
     if (isRadio) {
       const input = `<input type="radio" name="${targets}" value="${target.id}" required>`;
       return `<div><label>${input} <strong>${target.id}</strong>: ${specs(target)}</label></div>`;
@@ -360,13 +360,23 @@ const requestHandler = (request, response) => {
       // If the form identifies an action and a target type:
       if (requestURL === '/aorta/action') {
         const {action, targetType} = bodyObject;
-        // If the action is to see:
-        if (action === 'see') {
-          // Create a query.
-          const query = {targetType};
-          await addTargetParams(query, targetType, 'targets', true);
-          // Serve the target-choice page.
-          await render('seeTargets', query, response);
+        if (action) {
+          if (targetType) {
+            // If the action is to see:
+            if (action === 'see') {
+              // Create a query.
+              const query = {targetType};
+              await addTargetParams(query, 'targets', true);
+              // Serve the target-choice page.
+              await render('seeTargets', query, response);
+            }
+          }
+          else {
+            err('Target missing', 'identifying action', response);
+          }
+        }
+        else {
+          err('Action missing', 'identifying action', response);
         }
       }
       // If the form asks to see something:
