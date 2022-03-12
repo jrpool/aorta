@@ -104,7 +104,7 @@ const addTargetParams = async (query, htmlKey, isRadio) => {
   const {targetType} = query;
   // Identify the display format and validity criterion of targets of the specified type.
   const isValid = target => targetType === 'tester' ? target.roles.includes('test') : true;
-  const dir = metadata[targetType][1];
+  const dir = targetStrings[targetType][1];
   // For each target:
   const fileNames = await fs.readdir(`.data/${dir}`);
   let targets = [];
@@ -123,15 +123,15 @@ const addTargetParams = async (query, htmlKey, isRadio) => {
     }
   }
   // Add the page parameters to the query.
-  query.TargetsName = metadata[targetType][0];
+  query.TargetsName = targetStrings[targetType][0];
   query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
   query[htmlKey] = targets.map(target => {
     if (isRadio) {
       const input = `<input type="radio" name="${targets}" value="${target.id}" required>`;
-      return `<div><label>${input} <strong>${target.id}</strong>: ${specs(target)}</label></div>`;
+      return `<div><label>${input} <strong>${target.id}</strong>: ${targetSpecs[targetType](target)}</label></div>`;
     }
     else {
-      return `<li><strong>${target.id}</strong>: ${specs(target)}</li>`;
+      return `<li><strong>${target.id}</strong>: ${targetSpecs[targetType](target)}</li>`;
     }
   })
   .join('\n');
