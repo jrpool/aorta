@@ -81,49 +81,48 @@ const orderSpecs = order => {
   const batchPart = order.batchName ? `, batch <strong>${order.batchName}</strong>` : '';
   return `${mainPart}${batchPart}`;
 };
-// Adds metadata on the scripts, batches, orders, jobs, testers, or reports to a query.
-const addItems = async (query, itemType, isRadio) => {
-  let inputName, key, dir, specs;
+const metadata = {
+  script: ['Scripts', 'scripts'],
+  batch: ['Batches', 'batches'],
+  order: ['Orders', 'orders'],
+  job: ['Jobs', 'jobs'],
+  report: ['Reports', 'reports'],
+  user: ['Users', 'users'],
+  tester: ['Testers', 'users']
+};
+// Adds the scripts, batches, orders, jobs, users, testers, or reports to a query.
+const addItems = async (query, itemType, key, isRadio) => {
+  // Identify the display format, validity criterion, and directory of items of the specified type.
+  let specs;
+  let isValid = () => true;
   if (itemType === 'script') {
-    inputName = 'scriptName';
-    key = 'scripts';
-    dir = 'scripts';
     specs = item => item.what;
   }
   else if (itemType === 'batch') {
-    inputName = 'batchName';
-    key = 'batches';
-    dir = 'batches';
     specs = item => item.what;
-    addNone = true;
   }
   else if (itemType === 'order') {
-    inputName = 'orderName';
-    key = 'orders';
-    dir = 'orders';
     specs = item => orderSpecs(item);
   }
   else if (itemType === 'job') {
-    inputName = 'jobName';
-    key = 'jobs';
-    dir = 'jobs';
     specs = item => `${orderSpecs(item)}, tester <strong>${item.tester}</strong>`;
   }
-  else if (itemType === 'tester') {
-    inputName = 'testerName';
-    key = 'testers';
-    dir = 'users';
+  else if (itemType === 'user') {
     specs = item => item.name;
   }
+  else if (itemType === 'tester') {
+    specs = item => item.name;
+    isValid = item => item.roles.includes('test');
+  }
   else if (itemType === 'report') {
-    inputName = 'reportName';
-    key = 'reports';
-    dir = 'reports';
     specs = item => `${item.id}: ${item.userName}`;
   }
+  const dir = metadata[itemType][1];
+  // For each item:
   const itemFileNames = await fs.readdir(`.data/${dir}`);
   let items = [];
   for (const fileName of itemFileNames) {
+    // Get it.
     const itemJSON = await fs.readFile(`.data/${dir}/${fileName}`);
     const item = JSON.parse(itemJSON);
     // If the item has no 'id' property (i.e. is a script or batch):
@@ -131,14 +130,17 @@ const addItems = async (query, itemType, isRadio) => {
       // Use its filename base as the 'id' property.
       item.id = fileName.slice(0, -5);
     }
-    // Classify the item as valid unless testers are being added and the item has no test role.
-    item.isValid = itemType === 'tester' ? item.roles.includes('test') : true;
+    items.isValid = isValid(item);
+    // Add it to the array of items.
     items.push(item);
   }
-  // Add an HTML string encoding required radio buttons or list items to the query.
+  // Add the page parameters to the query.
+  query.ItemsName = metadata[itemType][0];
+  query.itemType = itemType;
+  query.ItemType = `${itemType[0].toUpperCase()}${itemType.slice(1)}`;
   query[key] = items.filter(item => item.isValid).map(item => {
     if (isRadio) {
-      const input = `<input type="radio" name="${inputName}" value="${item.id}" required>`;
+      const input = `<input type="radio" name="${items}" value="${item.id}" required>`;
       return `<div><label>${input} <strong>${item.id}</strong>: ${specs(item)}</label></div>`;
     }
     else {
@@ -290,22 +292,16 @@ const requestHandler = (request, response) => {
         // Serve the page.
         await render('index', {}, response);
       }
-      // Otherwise, if it is the scripts page:
-      else if (requestURL === '/aorta/scripts') {
+      // Otherwise, if it is the items page:
+      else if (requestURL.startsWith('/aorta/see')) {
         // Add the page parameters to the query.
-        await addItems(query, 'script', true);
+        const itemType = requestURL.slice(10).toLowerCase();
+        await addItems(query, itemType, 'items', true);
         // Serve the page.
-        await render('scripts', query, response);
-      }
-      // Otherwise, if it is the batches page:
-      else if (requestURL === '/aorta/batches') {
-        // Add the page parameters to the query.
-        await addItems(query, 'batch', true);
-        // Serve the page.
-        await render('batches', query, response);
+        await render('items', query, response);
       }
       // Otherwise, if it is the ordering page:
-      else if (requestURL === '/aorta/order') {
+      else if (requestURL === '/aorta/addOrder') {
         // Add the page parameters to the query.
         await addItems(query, 'script', true);
         await addItems(query, 'batch', true);
@@ -313,24 +309,8 @@ const requestHandler = (request, response) => {
         // Serve the page.
         await render('order', query, response);
       }
-      // Otherwise, if it is the orders page:
-      else if (requestURL === '/aorta/orders') {
-        // Add the page parameters to the query.
-        await addItems(query, 'order', true);
-        addYou(query);
-        // Serve the page.
-        await render('orders', query, response);
-      }
-      // Otherwise, if it is the jobs page:
-      else if (requestURL === '/aorta/jobs') {
-        // Add the page parameters to the query.
-        await addItems(query, 'job', true);
-        addYou(query);
-        // Serve the page.
-        await render('jobs', query, response);
-      }
       // Otherwise, if it is the assignment page:
-      else if (requestURL === '/aorta/assign') {
+      else if (requestURL === '/aorta/addAssignment') {
         // Add the page parameters to the query.
         await addItems(query, 'order', true);
         await addItems(query, 'tester', true);
@@ -339,7 +319,7 @@ const requestHandler = (request, response) => {
         await render('assign', query, response);
       }
       // Otherwise, if it is the reporting page:
-      else if (requestURL === '/aorta/report') {
+      else if (requestURL === '/aorta/addReport') {
         // Add the page parameters to the query.
         await addItems(query, 'job', false);
         addYou(query);
@@ -398,38 +378,25 @@ const requestHandler = (request, response) => {
         userName,
         authCode
       } = bodyObject;
-      // If the form asks to see a script:
-      if (requestURL === '/aorta/seeScript') {
-        // If a script was specified:
-        if (scriptName) {
+      // If the form asks to see something:
+      if (requestURL.startsWith('/aorta/see')) {
+        // If the thing to be seen was specified:
+        const fileName = requestURL.slice(7);
+        const whatLC = fileName.slice(3).toLowerCase();
+        const dir = metadata[whatLC][1];
+        if (itemName) {
           // Get it.
-          const script = await fs.readFile(`.data/scripts/${scriptName}.json`, 'utf8');
-          // Serve the response page.
+          const item = await fs.readFile(`.data/${dir}/${itemName}.json`, 'utf8');
+          // Represent page parameters in a query.
           const query = {
-            scriptName,
-            script
+            itemName,
+            item
           };
-          await render('seeScript', query, response);
+          // Serve the response page.
+          await render(fileName, query, response);
         }
         else {
-          err('No script selected', 'retrieving script', response);
-        }
-      }
-      // Otherwise, if the form asks to see a batch:
-      else if (requestURL === '/aorta/seeBatch') {
-        // If a script was specified:
-        if (batchName) {
-          // Get it.
-          const batch = await fs.readFile(`.data/batches/${batchName}.json`, 'utf8');
-          // Serve the response page.
-          const query = {
-            batchName,
-            batch
-          };
-          await render('seeBatch', query, response);
-        }
-        else {
-          err('No batch selected', 'retrieving batch', response);
+          err(`No ${whatLC} selected', 'retrieving ${whatLC}`, response);
         }
       }
       // Otherwise, if the form submits an order:
@@ -485,38 +452,6 @@ const requestHandler = (request, response) => {
           }
           else {
             err('No order selected', 'assigning order', response);
-          }
-        }
-      }
-      // Otherwise, if the form asks to see an order:
-      else if (requestURL === '/aorta/seeOrder') {
-        // If the user exists:
-        if (await userOK(userName, authCode, '', 'retrieving order', response)) {
-          // If an order was specified:
-          if (orderName) {
-            // Get it.
-            const order = await fs.readFile(`.data/orders/${orderName}.json`, 'utf8');
-            // Serve the response page.
-            await render('seeOrder', {order}, response);
-          }
-          else {
-            err('No order selected', 'retrieving order', response);
-          }
-        }
-      }
-      // Otherwise, if the form asks to see a job:
-      else if (requestURL === '/aorta/seeJob') {
-        // If the user exists:
-        if (await userOK(userName, authCode, '', 'retrieving job', response)) {
-          // If a job was specified:
-          if (jobName) {
-            // Get it.
-            const job = await fs.readFile(`.data/jobs/${jobName}.json`, 'utf8');
-            // Serve the response page.
-            await render('seeJob', {job}, response);
-          }
-          else {
-            err('No job selected', 'retrieving job', response);
           }
         }
       }
