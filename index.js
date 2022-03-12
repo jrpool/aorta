@@ -276,8 +276,10 @@ const requestHandler = (request, response) => {
     if (method === 'GET') {
       // If the requested resource is the home page:
       if (requestURL === '/aorta') {
+        // Create a query.
+        addYou(query);
         // Serve the page.
-        await render('index', {}, response);
+        await render('index', query, response);
       }
       // Otherwise, if it is the items page:
       else if (requestURL.startsWith('/aorta/see')) {
@@ -344,35 +346,33 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
-      const {
-        scriptName,
-        batchName,
-        orderName,
-        jobName,
-        testerName,
-        report,
-        itemType,
-        fileNameBase,
-        item,
-        userName,
-        authCode
-      } = bodyObject;
       // If the form identifies an action and a target type:
       if (requestURL === '/aorta/action') {
-        const {action, targetType} = bodyObject;
+        const {action, targetType, userName, authCode} = bodyObject;
         if (action) {
           if (targetType) {
             // If the action is to see:
             if (action === 'see') {
-              // Create a query.
-              const query = {targetType};
-              await addTargetParams(query, 'targets', true);
-              // Serve the target-choice page.
-              await render('seeTargets', query, response);
+              // If the user exists and has permission for the action:
+              const roles = {
+                'script': '',
+                'batch': '',
+                'order': '',
+                'job': '',
+                'report': 'read',
+                'user': 'manage'
+              }
+              if (userOK(userName, authCode, roles[targetType], 'identifying action', response)) {
+                // Create a query.
+                query.targetType = targetType;
+                await addTargetParams(query, 'targets', true);
+                // Serve the target-choice page.
+                await render('seeTargets', query, response);
+              }
             }
           }
           else {
-            err('Target missing', 'identifying action', response);
+            err('Target type missing', 'identifying action', response);
           }
         }
         else {
