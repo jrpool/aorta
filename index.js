@@ -136,15 +136,19 @@ const addTargetParams = async (query, htmlKey, isRadio) => {
   })
   .join('\n');
 };
-// Adds credentials inputs to a query
+// Adds credential inputs to a query.
 const addYou = query => {
+  const storedUserName = localStorage.getItem('userName');
+  const storedPassword = localStorage.getItem('password');
+  const userNameAttr = storedUserName ? ` value="${storedUserName}"` : '';
+  const passwordAttr = storedPassword ? ` value="${storedPassword}"` : '';
   const youLines = [
     '<fieldset>',
     '<legend>',
     'You',
     '</legend>',
-    '<div><label>Username <input name="userName" size="10" required></label></div>',
-    '<div><label>Authorization code <input type="password" name="authCode" size="10" required></label></div>',
+    `<div><label>Username <input name="userName" size="10"${userNameAttr} required></label></div>`,
+    `<div><label>Authorization code <input type="password" name="authCode" size="10"${passwordAttr} required></label></div>`,
     '</fieldset>'
   ];
   query.you = youLines.join('\n');
@@ -346,6 +350,14 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
+      // Store the username and password if novel.
+      const {userName, password} = bodyObject;
+      if (userName && userName !== localStorage.getItem('userName')) {
+        localStorage.setItem('userName', userName);
+      }
+      if (password && password !== localStorage.getItem('password')) {
+        localStorage.setItem('password', password);
+      }
       // If the form identifies an action and a target type:
       if (requestURL === '/aorta/action') {
         const {action, targetType, userName, authCode} = bodyObject;
@@ -362,10 +374,13 @@ const requestHandler = (request, response) => {
                 'report': 'read',
                 'user': 'manage'
               }
-              if (userOK(userName, authCode, roles[targetType], 'identifying action', response)) {
+              if (
+                await userOK(userName, authCode, roles[targetType], 'identifying action', response)
+              ) {
                 // Create a query.
                 query.targetType = targetType;
                 await addTargetParams(query, 'targets', true);
+                addYou(query);
                 // Serve the target-choice page.
                 await render('seeTargets', query, response);
               }
@@ -379,8 +394,8 @@ const requestHandler = (request, response) => {
           err('Action missing', 'identifying action', response);
         }
       }
-      // If the form asks to see something:
-      if (requestURL.startsWith('/aorta/see')) {
+      // Ottherwise, if the form asks to see something:
+      else if (requestURL.startsWith('/aorta/see')) {
         // If the thing to be seen was specified:
         const fileName = requestURL.slice(7);
         const whatLC = fileName.slice(3).toLowerCase();
