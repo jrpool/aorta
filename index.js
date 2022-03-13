@@ -355,6 +355,7 @@ const requestHandler = (request, response) => {
                 else if (targetType === 'job') {
                   pageName = 'createJobs';
                   await addQueryTargets(query, 'order', 'orders', 'orderName');
+                  await addQueryTargets(query, 'tester', 'testers', 'testerName');
                 }
                 else if (['report', 'user'].includes(targetType)) {
                   query.displayClass = 'displayNone';
