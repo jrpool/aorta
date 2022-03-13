@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <title>Remove __targetType__ | Aorta</title>
+    <meta name="description" content="Automated Order Router for Tests of Accessibility (Aorta)">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/aorta/style.css">
+    <link rel="icon" href="/aorta/favicon.png">
+    <script defer src="/aorta/script.js"></script>
+  </head>
+  <body>
+    <header>
+      <p><a href="/aorta">Home</a></p>
+    </header>
+    <main>
+      <h1>Remove an Aorta __targetType__</h1>
+      <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
+      <form action="/aorta/removeTarget" method="post" class="flex">
+        <input type="hidden" name="targetType" value="__targetType__">
+        <fieldset>
+          <legend>Remove which __targetType__?</legend>
+          __targets__
+        </fieldset>
+        __you__
+        <p><button>Remove</button></p>
+      </form>
+    </main>
+  </body>
+</html>

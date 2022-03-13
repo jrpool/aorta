@@ -370,6 +370,20 @@ const requestHandler = (request, response) => {
                 await render('seeTargets', query, response);
               }
             }
+            // Otherwise, if the action is to remove:
+            if (action === 'remove') {
+              // If the user exists and has permission for the action:
+              if (
+                await userOK(userName, authCode, roles[targetType][2], 'identifying action', response)
+              ) {
+                // Create a query.
+                query.targetType = targetType;
+                await addTargetParams(query, 'targets', true);
+                addYou(query);
+                // Serve the target-choice page.
+                await render('removeTargets', query, response);
+              }
+            }
           }
           else {
             err('Target type missing', 'identifying action', response);
@@ -379,7 +393,7 @@ const requestHandler = (request, response) => {
           err('Action missing', 'identifying action', response);
         }
       }
-      // Ottherwise, if the form asks to see a target:
+      // Otherwise, if the form asks to see a target:
       else if (requestURL === '/aorta/seeTarget') {
         // If the user exists and has permission to see the target:
         const {userName, authCode, targetType, targetName} = bodyObject;
@@ -400,6 +414,23 @@ const requestHandler = (request, response) => {
           else {
             err(`No ${targetType} selected', 'retrieving ${targetType}`, response);
           }
+        }
+      }
+      // Otherwise, if the action is to remove a target:
+      if (requestURL === '/aorta/removeTarget') {
+        // If the user exists and has permission for the action:
+        const {userName, authCode, targetType, targetName} = bodyObject;
+        if (
+          await userOK(userName, authCode, roles[targetType][2], `removing ${targetType}`, response)
+        ) {
+          // If the target was specified:
+          if (targetName) {
+            // Add the page parameters to the query.
+            query.targetType = targetType;
+            query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
+            query.targetName = targetName;
+            // Serve the response page.
+            await render('removeTarget', query, response);
         }
       }
       // Otherwise, if the form submits an order:
