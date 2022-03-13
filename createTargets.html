@@ -2,7 +2,7 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <title>Item addition | Aorta</title>
+    <title>Create __targetType__ | Aorta</title>
     <meta name="description" content="Automated Order Router for Tests of Accessibility (Aorta)">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/aorta/style.css">
@@ -13,24 +13,14 @@
       <p><a href="/aorta">Home</a></p>
     </header>
     <main>
-      <h1>Aorta item addition</h1>
+      <h1>Aorta __targetType__ creation</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
-      <form action="/aorta/add" method="post" class="flex">
-        <fieldset>
-          <legend>Type</legend>
-          <div><label>
-            <input type="radio" name="itemType" value="script" required> Script
-          </label></div>
-          <div><label>
-            <input type="radio" name="itemType" value="batch" required> Batch
-          </label></div>
-          <div><label><input type="radio" name="itemType" value="user" required> User</label></div>
-        </fieldset>
-        <p><label>
-          File name <input name="fileNameBase" size="12" maxlength="12" required>.json (only a to z and 0 to 9)
+      <form action="/aorta/createTarget" method="post" class="flex">
+        <p class="__displayClass__"><label>
+          File name <input name="targetName" size="12" maxlength="12" required>.json (only a to z and 0 to 9)
         </label></p>
-        <p><label for="item">Content (in JSON format)</label></p>
-        <textarea id="item" name="item" rows="20" cols="80" required></textarea>
+        <p><label for="target">Content (in JSON format)</label></p>
+        <textarea id="target" name="target" rows="20" cols="80" required></textarea>
         __you__
         <p><button>Submit</button></p>
       </form>

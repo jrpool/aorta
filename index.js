@@ -388,6 +388,12 @@ const requestHandler = (request, response) => {
                 else if (targetType === 'job') {
                   pageName = 'createJobs';
                 }
+                else if (['report', 'user'].includes(targetType)) {
+                  query.displayClass = 'displayNone';
+                }
+                else if (['script', 'batch'].includes(targetType)) {
+                  query.displayClass = 'displayBlock';
+                }
                 await render(pageName, query, response);
               }
             }
@@ -485,6 +491,51 @@ const requestHandler = (request, response) => {
           }
           else {
             err('No order selected', 'creating job', response);
+          }
+        }
+      }
+      // Otherwise, if the form creates a script, batch, report, or user:
+      else if (requestURL === '/aorta/createTarget') {
+        const {targetType, targetName, target} = bodyObject;
+        // If the user exists and is authorized to create targets of the specified type:
+        if (
+          await userOK(userName, authCode, roles[targetType][1], `creating ${targetType}`, response)
+        ) {
+          // If a target was specified:
+          if (target) {
+            try {
+              // Identify its name.
+              const targetObj = JSON.parse(target);
+              if (targetType === 'report') {
+                targetName = targetObj.id;
+              }
+              else if (targetType === 'user') {
+                targetName = targetObj.userName;
+              }
+              // If the name has a valid format:
+              if (/^[a-z0-9]+$/.test(targetName)) {
+                // If the name is not already used:
+                const dir = targetStrings[targetType][1];
+                const fileNames = await fs.readdir(`.data/${dir}`);
+                if (fileNames.map(fileName => fileName.slice(0, -5)).includes(targetName)) {
+                  err('Name already exists', `creating ${targetType}`, response);
+                }
+                else {
+                  // Serve an acknowledgement page.
+                  query.message = `Successfully created ${targetType} <strong>${targetName}</strong>.`;
+                  await render('ack', query, response);
+                }
+              }
+              else {
+                err('Name invalid', `creating ${targetType}`, response);
+              }
+            }
+            catch(error) {
+              err(error.message, `creating ${targetType}`, response);
+            }
+          }
+          else {
+            err(`No content entered`, `creating ${targetType}`, response);
           }
         }
       }

@@ -26,6 +26,12 @@ caption {
   font-weight: bold;
   font-style: italic;
 }
+.displayBlock {
+  display: block;
+}
+.displayNone {
+  display: none;
+}
 .error {
   font-weight: 700;
   color: #c00;
