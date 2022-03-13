@@ -391,6 +391,7 @@ const requestHandler = (request, response) => {
           else {
             err(`No ${targetType} selected', 'retrieving ${targetType}`, response);
           }
+        }
       }
       // Otherwise, if the form submits an order:
       else if (requestURL === '/aorta/order') {
