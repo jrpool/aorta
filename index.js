@@ -391,7 +391,7 @@ const requestHandler = (request, response) => {
             // Get it and add the page parameters to the query.
             const dir = targetStrings[targetType][1];
             query.target = await fs.readFile(`.data/${dir}/${targetName}.json`, 'utf8');
-            query.targetName = JSON.parse(query.target).id;
+            query.targetName = targetName;
             query.targetType = targetType;
             query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
             // Serve the response page.
