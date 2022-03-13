@@ -417,7 +417,7 @@ const requestHandler = (request, response) => {
         }
       }
       // Otherwise, if the action is to remove a target:
-      if (requestURL === '/aorta/removeTarget') {
+      else if (requestURL === '/aorta/removeTarget') {
         // If the user exists and has permission for the action:
         const {userName, authCode, targetType, targetName} = bodyObject;
         if (
@@ -431,6 +431,10 @@ const requestHandler = (request, response) => {
             query.targetName = targetName;
             // Serve the response page.
             await render('removeTarget', query, response);
+          }
+          else {
+            err(`No ${targetType} selected', 'removing ${targetType}`, response);
+          }
         }
       }
       // Otherwise, if the form submits an order:
