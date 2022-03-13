@@ -22,6 +22,18 @@ const protocolServer = require(protocolName);
 // Module to parse request bodies.
 const {parse} = require('querystring');
 
+// ########## CONSTANTS
+
+// Permissions to see, create, and remove targets.
+const roles = {
+  'script': ['', 'order', 'manage'],
+  'batch': ['', 'order', 'manage'],
+  'order': ['', 'order', 'manage'],
+  'job': ['', 'assign', 'manage'],
+  'report': ['read', 'test', 'manage'],
+  'user': ['manage', 'manage', 'manage']
+};
+
 // ########## FUNCTIONS
 
 // ==== OPERATION UTILITIES ====
@@ -127,8 +139,9 @@ const addTargetParams = async (query, htmlKey, isRadio) => {
   query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
   query[htmlKey] = targets.map(target => {
     if (isRadio) {
-      const input = `<input type="radio" name="${targets}" value="${target.id}" required>`;
-      return `<div><label>${input} <strong>${target.id}</strong>: ${targetSpecs[targetType](target)}</label></div>`;
+      const input = `<input type="radio" name="targetName" value="${target.id}" required>`;
+      const specs = targetSpecs[targetType](target);
+      return `<div><label>${input} <strong>${target.id}</strong>: ${specs}</label></div>`;
     }
     else {
       return `<li><strong>${target.id}</strong>: ${targetSpecs[targetType](target)}</li>`;
@@ -274,23 +287,8 @@ const requestHandler = (request, response) => {
     const query = {};
     // METHOD GET: If the request requests a resource:
     if (method === 'GET') {
-      // If the requested resource is the home page:
-      if (requestURL === '/aorta') {
-        // Create a query.
-        addYou(query);
-        // Serve the page.
-        await render('index', query, response);
-      }
-      // Otherwise, if it is the items page:
-      else if (requestURL.startsWith('/aorta/see')) {
-        // Add the page parameters to the query.
-        const itemType = requestURL.slice(10).toLowerCase();
-        await addItems(query, itemType, 'items', true);
-        // Serve the page.
-        await render('items', query, response);
-      }
-      // Otherwise, if it is the ordering page:
-      else if (requestURL === '/aorta/addOrder') {
+      // If it is the ordering page:
+      if (requestURL === '/aorta/addOrder') {
         // Add the page parameters to the query.
         await addItems(query, 'script', true);
         await addItems(query, 'batch', true);
@@ -354,16 +352,8 @@ const requestHandler = (request, response) => {
             // If the action is to see:
             if (action === 'see') {
               // If the user exists and has permission for the action:
-              const roles = {
-                'script': '',
-                'batch': '',
-                'order': '',
-                'job': '',
-                'report': 'read',
-                'user': 'manage'
-              }
               if (
-                await userOK(userName, authCode, roles[targetType], 'identifying action', response)
+                await userOK(userName, authCode, roles[targetType][0], 'identifying action', response)
               ) {
                 // Create a query.
                 query.targetType = targetType;
@@ -382,26 +372,25 @@ const requestHandler = (request, response) => {
           err('Action missing', 'identifying action', response);
         }
       }
-      // Ottherwise, if the form asks to see something:
-      else if (requestURL.startsWith('/aorta/see')) {
-        // If the thing to be seen was specified:
-        const fileName = requestURL.slice(7);
-        const whatLC = fileName.slice(3).toLowerCase();
-        const dir = metadata[whatLC][1];
-        if (itemName) {
-          // Get it.
-          const item = await fs.readFile(`.data/${dir}/${itemName}.json`, 'utf8');
-          // Represent page parameters in a query.
-          const query = {
-            itemName,
-            item
-          };
-          // Serve the response page.
-          await render(fileName, query, response);
-        }
-        else {
-          err(`No ${whatLC} selected', 'retrieving ${whatLC}`, response);
-        }
+      // Ottherwise, if the form asks to see a target:
+      else if (requestURL === '/aorta/seeTarget') {
+        // If the user exists and has permission to see the target:
+        const {userName, authCode, targetType, targetName} = bodyObject;
+        if (await userOK(
+          userName, authCode, roles[targetType][0], `retrieving ${targetType}`, response
+        )) {
+          // If the target was specified:
+          if (targetName) {
+            // Get it and add the page parameters to the query.
+            const dir = targetStrings[targetType][1];
+            query.target = await fs.readFile(`.data/${dir}/${targetName}.json`, 'utf8');
+            query.TargetName = `${targetName[0].toUpperCase()}${targetName.slice(1)}`;
+            // Serve the response page.
+            await render('seeTarget', query, response);
+          }
+          else {
+            err(`No ${targetType} selected', 'retrieving ${targetType}`, response);
+          }
       }
       // Otherwise, if the form submits an order:
       else if (requestURL === '/aorta/order') {

@@ -16,7 +16,8 @@
     <main>
       <h1>See an Aorta __targetType__</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
-      <form action="/aorta/see__ItemType__" method="post" class="flex">
+      <form action="/aorta/seeTarget" method="post" class="flex">
+        <input type="hidden" name="targetType" value="__targetType__">
         <fieldset>
           <legend>__TargetType__</legend>
           __targets__
