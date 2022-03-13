@@ -407,7 +407,7 @@ const requestHandler = (request, response) => {
             await render('seeTarget', query, response);
           }
           else {
-            err(`No ${targetType} selected', 'retrieving ${targetType}`, response);
+            err(`No ${targetType} selected`, `retrieving ${targetType}`, response);
           }
         }
       }
