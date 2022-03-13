@@ -26,12 +26,12 @@ const {parse} = require('querystring');
 
 // Permissions to see, create, and remove targets.
 const roles = {
-  'script': ['', 'order', 'manage'],
-  'batch': ['', 'order', 'manage'],
-  'order': ['', 'order', 'manage'],
-  'job': ['', 'assign', 'manage'],
-  'report': ['read', 'test', 'manage'],
-  'user': ['manage', 'manage', 'manage']
+  script: ['', 'order', 'manage'],
+  batch: ['', 'order', 'manage'],
+  order: ['', 'order', 'manage'],
+  job: ['', 'assign', 'manage'],
+  report: ['read', 'test', 'manage'],
+  user: ['manage', 'manage', 'manage']
 };
 
 // ########## FUNCTIONS
