@@ -425,6 +425,8 @@ const requestHandler = (request, response) => {
         ) {
           // If the target was specified:
           if (targetName) {
+            // Delete it.
+            await fs.rm(`.data/${targetStrings[targetType][1]}/${targetName}.json`);
             // Add the page parameters to the query.
             query.targetType = targetType;
             query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
