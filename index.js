@@ -287,8 +287,15 @@ const requestHandler = (request, response) => {
     const query = {};
     // METHOD GET: If the request requests a resource:
     if (method === 'GET') {
-      // If it is the ordering page:
-      if (requestURL === '/aorta/addOrder') {
+      // If it is the home page:
+      if (requestURL === '/aorta') {
+        // Add the page parameters to the query.
+        addYou(query);
+        // Serve the page.
+        await render('index', query, response);
+      }
+      // Otherwise, if it is the ordering page:
+      else if (requestURL === '/aorta/addOrder') {
         // Add the page parameters to the query.
         await addItems(query, 'script', true);
         await addItems(query, 'batch', true);
