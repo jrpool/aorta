@@ -294,38 +294,6 @@ const requestHandler = (request, response) => {
         // Serve the page.
         await render('index', query, response);
       }
-      // Otherwise, if it is the ordering page:
-      else if (requestURL === '/aorta/addOrder') {
-        // Add the page parameters to the query.
-        await addItems(query, 'script', true);
-        await addItems(query, 'batch', true);
-        addYou(query);
-        // Serve the page.
-        await render('order', query, response);
-      }
-      // Otherwise, if it is the assignment page:
-      else if (requestURL === '/aorta/addAssignment') {
-        // Add the page parameters to the query.
-        await addItems(query, 'order', true);
-        await addItems(query, 'tester', true);
-        addYou(query);
-        // Serve the page.
-        await render('assign', query, response);
-      }
-      // Otherwise, if it is the reporting page:
-      else if (requestURL === '/aorta/addReport') {
-        // Add the page parameters to the query.
-        await addItems(query, 'job', false);
-        addYou(query);
-        // Serve the page.
-        await render('report', query, response);
-      }
-      // Otherwise, if it is the item-addition page:
-      else if (requestURL === '/aorta/add') {
-        addYou(query);
-        // Serve the page.
-        await render('add', query, response);
-      }
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
         // Serve it.
@@ -351,7 +319,7 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
-      // If the form identifies an action and a target type:
+      // If it is the home-page form:
       if (requestURL === '/aorta/action') {
         const {action, targetType, userName, authCode} = bodyObject;
         if (action) {
@@ -420,7 +388,7 @@ const requestHandler = (request, response) => {
           err('Action missing', 'identifying action', response);
         }
       }
-      // Otherwise, if the form asks to see a target:
+      // Otherwise, if the form specifies a target to see:
       else if (requestURL === '/aorta/seeTarget') {
         // If the user exists and has permission to see the target:
         const {userName, authCode, targetType, targetName} = bodyObject;
@@ -445,7 +413,7 @@ const requestHandler = (request, response) => {
       }
       // Otherwise, if the form creates an order:
       else if (requestURL === '/aorta/createOrder') {
-        // If the user exists and is authorized to submit orders:
+        // If the user exists and is authorized to create orders:
         if (await userOK(userName, authCode, 'order', 'creating order', response)) {
           // If a script was specified:
           if (scriptName) {
@@ -482,7 +450,7 @@ const requestHandler = (request, response) => {
           if (orderName) {
             // If a tester was specified:
             if (testerName) {
-              // Assign the order to the tester and serve an acknowledgement page.
+              // Create the job and serve an acknowledgement page.
               await writeJob(userName, orderName, testerName, response);
             }
             else {
@@ -521,6 +489,8 @@ const requestHandler = (request, response) => {
                   err('Name already exists', `creating ${targetType}`, response);
                 }
                 else {
+                  // Create the target.
+                  await fs.writeFile(`.data/${dir}/${targetName}.json`, target);
                   // Serve an acknowledgement page.
                   query.message = `Successfully created ${targetType} <strong>${targetName}</strong>.`;
                   await render('ack', query, response);
@@ -557,91 +527,6 @@ const requestHandler = (request, response) => {
           }
           else {
             err(`No ${targetType} selected', 'removing ${targetType}`, response);
-          }
-        }
-      }
-      // Otherwise, if the form adds an item:
-      else if (requestURL === '/aorta/add') {
-        // If the user exists and is authorized to add items:
-        if (await userOK(userName, authCode, 'manage', 'adding item', response)) {
-          // If an item type was specified:
-          if (itemType) {
-            // If a filename base was specified:
-            if (fileNameBase) {
-              // If the filename base is valid:
-              if (/^[a-z0-9]+$/.test(fileNameBase)) {
-                // If it duplicates an existing file name:
-                const dirs = {
-                  script: 'scripts',
-                  batch: 'batches',
-                  user: 'users'
-                };
-                const fileNames = await fs.readdir(`.data/${dirs[itemType]}`)
-                const fileNameBases = fileNames.map(fileName => fileName.slice(0, -5));
-                if (fileNameBases.includes(fileNameBase)) {
-                  err(`An existing ${itemType} has that filename.`, `adding ${itemType}`, response);
-                }
-                // Otherwise, i.e. if it is new:
-                else {
-                  // If content was specified:
-                  if (item) {
-                    // If it is valid JSON:
-                    try {
-                      JSON.parse(item);
-                      // Write the file.
-                      await fs.writeFile(`.data/${dirs[itemType]}/${fileNameBase}.json`, item);
-                      // Serve an acknowledgement page.
-                      await render(
-                        'ack',
-                        {message: `Success: New ${itemType} <strong>${fileNameBase}</strong> created.`},
-                        response
-                      );
-                    }
-                    catch(error) {
-                      err(error.message, `adding ${itemType}`, response);
-                    }
-                  }
-                  else {
-                    err('File content missing', `adding ${itemType}`, response)
-                  }
-                }
-              }
-              else {
-                err('File name invalid', `adding ${itemType}`, response);
-              }
-            }
-            else {
-              err('File name missing', `adding ${itemType}`, response);
-            }
-          }
-          else {
-            err('No item type selected', `adding ${itemType}`, response);
-          }
-        }
-      }
-      // Otherwise, if the form submits a job report:
-      else if (requestURL === '/aorta/report') {
-        // If the user exists and is authorized to perform jobs:
-        if (await userOK(userName, authCode, 'test', 'receiving report', response)) {
-          // If content was specified:
-          if (report) {
-            // If it is valid JSON:
-            try {
-              // Get its name.
-              const data = JSON.parse(report);
-              const fileNameBase = data.id;
-              // Write the file.
-              await fs.writeFile(`.data/reports/${fileNameBase}.json`, report);
-              // Serve an acknowledgement page.
-              await render(
-                'ack',
-                {message: `Success: New report <strong>${fileNameBase}</strong> received.`},
-                response
-              );
-            }
-            catch(error) {
-              err(error.message, 'receiving report', response);
-            }
           }
         }
       }
