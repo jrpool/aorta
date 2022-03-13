@@ -370,8 +370,29 @@ const requestHandler = (request, response) => {
                 await render('seeTargets', query, response);
               }
             }
+            // Otherwise, if the action is to create:
+            else if (action === 'create') {
+              // If the user exists and has permission for the action:
+              if (
+                await userOK(userName, authCode, roles[targetType][1], 'identifying action', response)
+              ) {
+                // Create a query.
+                query.targetType = targetType;
+                await addTargetParams(query, 'targets', true);
+                addYou(query);
+                // Serve the target-creation page.
+                let pageName = 'createTarget';
+                if (targetType === 'order') {
+                  pageName = 'createOrder';
+                }
+                else if (targetType === 'job') {
+                  pageName = 'createJob';
+                }
+                await render(pageName, query, response);
+              }
+            }
             // Otherwise, if the action is to remove:
-            if (action === 'remove') {
+            else if (action === 'remove') {
               // If the user exists and has permission for the action:
               if (
                 await userOK(userName, authCode, roles[targetType][2], 'identifying action', response)
@@ -428,11 +449,9 @@ const requestHandler = (request, response) => {
             // Delete it.
             await fs.rm(`.data/${targetStrings[targetType][1]}/${targetName}.json`);
             // Add the page parameters to the query.
-            query.targetType = targetType;
-            query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
-            query.targetName = targetName;
+            query.message = `You have successfully removed ${targetType} <strong>${targetName}</strong>.`;
             // Serve the response page.
-            await render('removeTarget', query, response);
+            await render('ack', query, response);
           }
           else {
             err(`No ${targetType} selected', 'removing ${targetType}`, response);
