@@ -414,11 +414,12 @@ const requestHandler = (request, response) => {
       // Otherwise, if the form creates an order:
       else if (requestURL === '/aorta/createOrder') {
         // If the user exists and is authorized to create orders:
+        const {userName, authCode, scriptName, batchName} = bodyObject;
         if (await userOK(userName, authCode, 'order', 'creating order', response)) {
           // If a script was specified:
           if (scriptName) {
             // Get it and initialize the order options.
-            options = {
+            const options = {
               scriptName,
               script: await getOrderPart(scriptName, 'scripts')
             };
@@ -445,6 +446,7 @@ const requestHandler = (request, response) => {
       // Otherwise, if the form creates a job:
       else if (requestURL === '/aorta/createJob') {
         // If the user exists and is authorized to create jobs:
+        const {userName, authCode, orderName, testerName} = bodyObject;
         if (await userOK(userName, authCode, 'assign', 'creating job', response)) {
           // If an order was specified:
           if (orderName) {
@@ -464,8 +466,8 @@ const requestHandler = (request, response) => {
       }
       // Otherwise, if the form creates a script, batch, report, or user:
       else if (requestURL === '/aorta/createTarget') {
-        const {userName, authCode, targetType, targetName, target} = bodyObject;
         // If the user exists and is authorized to create targets of the specified type:
+        const {userName, authCode, targetType, targetName, target} = bodyObject;
         if (
           await userOK(userName, authCode, roles[targetType][1], `creating ${targetType}`, response)
         ) {
