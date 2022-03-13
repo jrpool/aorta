@@ -487,7 +487,7 @@ const requestHandler = (request, response) => {
                 const dir = targetStrings[targetType][1];
                 const fileNames = await fs.readdir(`.data/${dir}`);
                 if (fileNames.map(fileName => fileName.slice(0, -5)).includes(targetName)) {
-                  err('Name already exists', `creating ${targetType}`, response);
+                  err('ID already exists', `creating ${targetType}`, response);
                 }
                 else {
                   // Create the target.
@@ -498,7 +498,7 @@ const requestHandler = (request, response) => {
                 }
               }
               else {
-                err('Name invalid', `creating ${targetType}`, response);
+                err('ID invalid', `creating ${targetType}`, response);
               }
             }
             catch(error) {
