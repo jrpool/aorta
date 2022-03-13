@@ -112,8 +112,7 @@ const targetSpecs = {
   tester: target => target.name
 };
 // Adds the scripts, batches, orders, jobs, users, testers, or reports to a query.
-const addTargetParams = async (query, htmlKey, isRadio) => {
-  const {targetType} = query;
+const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
   // Identify the display format and validity criterion of targets of the specified type.
   const isValid = target => targetType === 'tester' ? target.roles.includes('test') : true;
   const dir = targetStrings[targetType][1];
@@ -134,12 +133,10 @@ const addTargetParams = async (query, htmlKey, isRadio) => {
       targets.push(target);
     }
   }
-  // Add the page parameters to the query.
-  query.TargetsName = targetStrings[targetType][0];
-  query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
+  // Add the targets as a parameter to the query.
   query[htmlKey] = targets.map(target => {
-    if (isRadio) {
-      const input = `<input type="radio" name="targetName" value="${target.id}" required>`;
+    if (radioName) {
+      const input = `<input type="radio" name="${radioName}" value="${target.id}" required>`;
       const specs = targetSpecs[targetType](target);
       return `<div><label>${input} <strong>${target.id}</strong>: ${specs}</label></div>`;
     }
@@ -332,7 +329,8 @@ const requestHandler = (request, response) => {
               ) {
                 // Create a query.
                 query.targetType = targetType;
-                await addTargetParams(query, 'targets', true);
+                await addQueryTargets(query, targetType, 'targets', 'targetName');
+                query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
                 addYou(query);
                 // Serve the target-choice page.
                 await render('seeTargets', query, response);
@@ -346,15 +344,17 @@ const requestHandler = (request, response) => {
               ) {
                 // Create a query.
                 query.targetType = targetType;
-                await addTargetParams(query, 'targets', true);
                 addYou(query);
                 // Serve the target-creation page.
                 let pageName = 'createTargets';
                 if (targetType === 'order') {
                   pageName = 'createOrders';
+                  await addQueryTargets(query, 'script', 'scripts', 'scriptName');
+                  await addQueryTargets(query, 'batch', 'batches', 'batchName');
                 }
                 else if (targetType === 'job') {
                   pageName = 'createJobs';
+                  await addQueryTargets(query, 'order', 'orders', 'orderName');
                 }
                 else if (['report', 'user'].includes(targetType)) {
                   query.displayClass = 'displayNone';
@@ -373,7 +373,7 @@ const requestHandler = (request, response) => {
               ) {
                 // Create a query.
                 query.targetType = targetType;
-                await addTargetParams(query, 'targets', true);
+                await addQueryTargets(query, targetType, 'targets', 'targetName');
                 addYou(query);
                 // Serve the target-choice page.
                 await render('removeTargets', query, response);
