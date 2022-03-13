@@ -478,11 +478,8 @@ const requestHandler = (request, response) => {
             try {
               // Identify its name.
               const targetObj = JSON.parse(target);
-              if (targetType === 'report') {
+              if (['report', 'user'].includes(targetType)) {
                 targetName = targetObj.id;
-              }
-              else if (targetType === 'user') {
-                targetName = targetObj.userName;
               }
               // If the name has a valid format:
               if (/^[a-z0-9]+$/.test(targetName)) {
