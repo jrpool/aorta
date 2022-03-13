@@ -346,7 +346,7 @@ const requestHandler = (request, response) => {
                 query.targetType = targetType;
                 addYou(query);
                 // Serve the target-creation page.
-                let pageName = 'createTargets';
+                let pageName;
                 if (targetType === 'order') {
                   pageName = 'createOrders';
                   await addQueryTargets(query, 'script', 'scripts', 'scriptName');
@@ -358,10 +358,10 @@ const requestHandler = (request, response) => {
                   await addQueryTargets(query, 'tester', 'testers', 'testerName');
                 }
                 else if (['report', 'user'].includes(targetType)) {
-                  query.displayClass = 'displayNone';
+                  pageName = 'createNamed';
                 }
                 else if (['script', 'batch'].includes(targetType)) {
-                  query.displayClass = 'displayBlock';
+                  pageName = 'createUnnamed';
                 }
                 await render(pageName, query, response);
               }

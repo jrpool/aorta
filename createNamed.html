@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <title>Create __targetType__ | Aorta</title>
+    <meta name="description" content="Automated Order Router for Tests of Accessibility (Aorta)">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/aorta/style.css">
+    <link rel="icon" href="/aorta/favicon.png">
+  </head>
+  <body>
+    <header>
+      <p><a href="/aorta">Home</a></p>
+    </header>
+    <main>
+      <h1>Aorta __targetType__ creation</h1>
+      <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
+      <form action="/aorta/createTarget" method="post" class="flex">
+        <input type="hidden" name="targetType" value="__targetType__">
+        <p><label for="target">Content (in JSON format)</label></p>
+        <textarea id="target" name="target" rows="20" cols="80" required></textarea>
+        __you__
+        <p><button>Submit</button></p>
+      </form>
+    </main>
+  </body>
+</html>
