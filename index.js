@@ -211,7 +211,7 @@ const userOK = async (userName, authCode, role, context, response) => {
 const nowString = () => (new Date()).toISOString().slice(0, 19);
 // Writes an order and serves an acknowledgement page.
 const writeOrder = async (userName, options, response) => {
-  const id = Math.floor((Date.now() - Date.UTC(2022, 1)) / 100).toString(36);
+  const id = Math.floor((Date.now() - Date.UTC(2022, 1)) / 500).toString(36);
   const {scriptName, batchName, script, batch} = options;
   const data = {
     id,
@@ -227,11 +227,11 @@ const writeOrder = async (userName, options, response) => {
   await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
   // Serve an acknowledgement page.
   await render(
-    'ack', {message: `Order successfully received. ID: <strong>${id}</strong>`}, response
+    'ack', {message: `Successfully created order <strong>${id}</strong>.`}, response
   );
 };
 // Assigns an order to a tester and serves an acknowledgement page.
-const assignOrder = async (assignedBy, orderNameBase, testerName, response) => {
+const writeJob = async (assignedBy, orderNameBase, testerName, response) => {
   // Get the order.
   const orderJSON = await fs.readFile(`.data/orders/${orderNameBase}.json`, 'utf8');
   const order = JSON.parse(orderJSON);
@@ -249,7 +249,7 @@ const assignOrder = async (assignedBy, orderNameBase, testerName, response) => {
   // Serve an acknowledgement page.
   await render(
     'ack',
-    {message: `Order successfully assigned as a job. ID: <strong>${orderNameBase}</strong>`},
+    {message: `Successfully created job <strong>${orderNameBase}</strong>.`},
     response
   );
 };
@@ -381,12 +381,12 @@ const requestHandler = (request, response) => {
                 await addTargetParams(query, 'targets', true);
                 addYou(query);
                 // Serve the target-creation page.
-                let pageName = 'createTarget';
+                let pageName = 'createTargets';
                 if (targetType === 'order') {
-                  pageName = 'createOrder';
+                  pageName = 'createOrders';
                 }
                 else if (targetType === 'job') {
-                  pageName = 'createJob';
+                  pageName = 'createJobs';
                 }
                 await render(pageName, query, response);
               }
@@ -437,6 +437,57 @@ const requestHandler = (request, response) => {
           }
         }
       }
+      // Otherwise, if the form creates an order:
+      else if (requestURL === '/aorta/createOrder') {
+        // If the user exists and is authorized to submit orders:
+        if (await userOK(userName, authCode, 'order', 'creating order', response)) {
+          // If a script was specified:
+          if (scriptName) {
+            // Get it and initialize the order options.
+            options = {
+              scriptName,
+              script: await getOrderPart(scriptName, 'scripts')
+            };
+            // If a batch was specified or waived:
+            if (batchName) {
+              // If it was not waived:
+              if (batchName !== 'none') {
+                // Get the batch and add it to the order options.
+                options.batchName = batchName;
+                options.batch = await getOrderPart(batchName, 'batches');
+              }
+              // Write the order and serve an acknowledgement page.
+              await writeOrder(userName, options, response);
+            }
+            else {
+              err('No batch option selected', 'creating order', response);
+            }
+          }
+          else {
+            err('No script selected', 'creating order', response);
+          }
+        }
+      }
+      // Otherwise, if the form creates a job:
+      else if (requestURL === '/aorta/createJob') {
+        // If the user exists and is authorized to create jobs:
+        if (await userOK(userName, authCode, 'assign', 'creating job', response)) {
+          // If an order was specified:
+          if (orderName) {
+            // If a tester was specified:
+            if (testerName) {
+              // Assign the order to the tester and serve an acknowledgement page.
+              await writeJob(userName, orderName, testerName, response);
+            }
+            else {
+              err('No tester selected', 'creating job', response);
+            }
+          }
+          else {
+            err('No order selected', 'creating job', response);
+          }
+        }
+      }
       // Otherwise, if the action is to remove a target:
       else if (requestURL === '/aorta/removeTarget') {
         // If the user exists and has permission for the action:
@@ -455,62 +506,6 @@ const requestHandler = (request, response) => {
           }
           else {
             err(`No ${targetType} selected', 'removing ${targetType}`, response);
-          }
-        }
-      }
-      // Otherwise, if the form submits an order:
-      else if (requestURL === '/aorta/order') {
-        // If the user exists and is authorized to submit orders:
-        if (await userOK(userName, authCode, 'order', 'submitting order', response)) {
-          // If a script was specified:
-          if (scriptName) {
-            // Get it and initialize the order options.
-            options = {
-              scriptName,
-              script: await getOrderPart(scriptName, 'scripts')
-            };
-            // If a batch was specified or waived:
-            if (batchName) {
-              // If it was waived:
-              if (batchName === 'none') {
-                // Write the order.
-                await writeOrder(userName, options, response);
-              }
-              // Otherwise, if it was specified:
-              else {
-                // Get the batch and add it to the order options.
-                options.batchName = batchName;
-                options.batch = await getOrderPart(batchName, 'batches');
-                // Write the order and serve an acknowledgement page.
-                await writeOrder(userName, options, response);
-              }
-            }
-            else {
-              err('No batch option selected', 'submitting order', response);
-            }
-          }
-          else {
-            err('No script selected', 'submitting order', response);
-          }
-        }
-      }
-      // Otherwise, if the form assigns an order:
-      else if (requestURL === '/aorta/assign') {
-        // If the user exists and is authorized to assign orders:
-        if (await userOK(userName, authCode, 'assign', 'assigning order', response)) {
-          // If an order was specified:
-          if (orderName) {
-            // If a tester was specified:
-            if (testerName) {
-              // Assign the order to the tester and serve an acknowledgement page.
-              await assignOrder(userName, orderName, testerName, response);
-            }
-            else {
-              err('No tester selected', 'assigning order', response);
-            }
-          }
-          else {
-            err('No order selected', 'assigning order', response);
           }
         }
       }
