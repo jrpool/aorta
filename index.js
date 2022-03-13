@@ -464,7 +464,7 @@ const requestHandler = (request, response) => {
       }
       // Otherwise, if the form creates a script, batch, report, or user:
       else if (requestURL === '/aorta/createTarget') {
-        const {targetType, targetName, target} = bodyObject;
+        const {userName, authCode, targetType, targetName, target} = bodyObject;
         // If the user exists and is authorized to create targets of the specified type:
         if (
           await userOK(userName, authCode, roles[targetType][1], `creating ${targetType}`, response)
