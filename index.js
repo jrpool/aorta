@@ -38,6 +38,13 @@ const roles = {
 
 // ==== OPERATION UTILITIES ====
 
+// Sends an API response.
+const sendAPI = async (content, response) => {
+  response.setHeader('Content-Type', 'text/json');
+  await response.end(JSON.stringify({
+    error: content
+  }));
+};
 // Serves content as a page.
 const servePage = async (content, location, response) => {
   response.setHeader('Content-Type', 'text/html');
@@ -66,22 +73,32 @@ const serveResource = async (fileName, contentType, encoding, response) => {
   response.end(content);
 };
 // Processes a thrown error.
-const err = async (error, context, response) => {
+const err = async (error, context, response, isAPI = false) => {
   let problem = error;
-  // If error is system-defined:
+  // If the error is system-defined:
   if (typeof error !== 'string') {
     // Reduce it to a string.
     problem = `${error.message}\n${error.stack}`.replace(
       /^.+<title>|^.+<Errors>|<\/title>.+$|<\/Errors>.+$/gs, ''
     );
   }
+  // If the request is an API request:
+  if (isAPI) {
+    // Remove any HTML markup from the error message.
+    problem = problem.replace(/<.*?>/g, '');
+  }
   const msg = `Error ${context}: ${problem}`;
   console.log(msg);
-  // Serve an error page containing the error message.
-  const query = {
-    errorMessage: msg.replace(/\n/g, '<br>')
-  };
-  await render('error', query, response);
+  // Serve the error message.
+  if (isAPI) {
+    await sendAPI(msg, response);
+  }
+  else {
+    const query = {
+      errorMessage: msg.replace(/\n/g, '<br>')
+    };
+    await render('error', query, response);
+  }
   return '';
 };
 
@@ -160,7 +177,7 @@ const addYou = query => {
   query.you = youLines.join('\n');
 };
 // Returns whether a user exists and has a role.
-const userOK = async (userName, authCode, role, context, response) => {
+const userOK = async (userName, authCode, role, context, response, isAPI) => {
   // If a user name was specified:
   if (userName) {
     // If it is an existing user name:
@@ -180,27 +197,27 @@ const userOK = async (userName, authCode, role, context, response) => {
           }
           // Otherwise, i.e. if the user does not have the specified role:
           else {
-            err(`You do not have <q>${role}</q> permission`, context, response);
+            err(`You do not have <q>${role}</q> permission`, context, response, isAPI);
             return false;
           }
         }
         else {
-          err('Username or authorization code invalid', context, response);
+          err('Username or authorization code invalid', context, response, isAPI);
           return false;
         }
       }
       else{
-        err('Authorization code missing', context, response);
+        err('Authorization code missing', context, response, isAPI);
         return false;
       }
     }
     else {
-      err('Username or authorization code invalid', context, response);
+      err('Username or authorization code invalid', context, response, isAPI);
       return false;
     }
   }
   else {
-    err('Username missing', context, response);
+    err('Username missing', context, response, isAPI);
     return false;
   }
 };
@@ -227,10 +244,10 @@ const writeOrder = async (userName, options, response) => {
     'ack', {message: `Successfully created order <strong>${id}</strong>.`}, response
   );
 };
-// Assigns an order to a tester and serves an acknowledgement page.
-const writeJob = async (assignedBy, orderNameBase, testerName, response) => {
+// Assigns an order to a tester.
+const writeJob = async (assignedBy, fileNameBase, testerName) => {
   // Get the order.
-  const orderJSON = await fs.readFile(`.data/orders/${orderNameBase}.json`, 'utf8');
+  const orderJSON = await fs.readFile(`.data/orders/${fileNameBase}.json`, 'utf8');
   const order = JSON.parse(orderJSON);
   // Add assignment facts to it.
   order.assignedBy = assignedBy;
@@ -243,12 +260,6 @@ const writeJob = async (assignedBy, orderNameBase, testerName, response) => {
   await fs.writeFile(`.data/jobs/${orderNameBase}.json`, JSON.stringify(order, null, 2));
   // Delete it as an order.
   await fs.rm(`.data/orders/${orderNameBase}.json`);
-  // Serve an acknowledgement page.
-  await render(
-    'ack',
-    {message: `Successfully created job <strong>${orderNameBase}</strong>.`},
-    response
-  );
 };
 // Gets the content of a script or batch.
 const getOrderPart = async (fileNameBase, partDir) => {
@@ -316,7 +327,49 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const bodyObject = parse(Buffer.concat(bodyParts).toString());
-      // If it is the home-page form:
+      // If it is an API request:
+      if (requestURL === '/aorta/api') {
+        const {what, userName, authCode} = bodyObject;
+        // If the user exists and is authorized to make the request:
+        if (apiUserOK(what, userName, authCode, response)) {
+          // If the request is to see the orders:
+          if (what === 'seeOrders') {
+            // Get them.
+            const orders = await apiGet('order');
+            // Send them.
+            apiSend(orders, response);
+          }
+          // Otherwise, if the request is to create a job:
+          else if (what === 'createJob') {
+            // If the request is valid:
+            const {orderName, testerName} = bodyObject;
+            if (apiJobOK(orderName, testerName)) {
+              // Create the job.
+              await writeJob(userName, orderName, testerName);
+              // Send an acknowledgement.
+              await apiSend({success: 'Job created'});
+            }
+          }
+          // Otherwise, if the request is to create a report:
+          else if (what === 'createReport') {
+            const {report} = bodyObject;
+            // If the report is valid:
+            try {
+              const reportObj = JSON.parse(report);
+              const reportName = reportObj.id;
+              if (reportName && typeof reportName === 'string') {
+                if (reportOK(report)) {
+                  // Create it.
+                  await fs.writeFile(`.data/reports/${targetName}.json`, target);
+                }
+              }
+            }
+            if (apiReportOK(report)) {
+            }
+          }
+        }
+      }
+      // Otherwise, if it is the home-page form:
       if (requestURL === '/aorta/action') {
         const {action, targetType, userName, authCode} = bodyObject;
         if (action) {
@@ -453,8 +506,14 @@ const requestHandler = (request, response) => {
           if (orderName) {
             // If a tester was specified:
             if (testerName) {
-              // Create the job and serve an acknowledgement page.
-              await writeJob(userName, orderName, testerName, response);
+              // Create the job.
+              await writeJob(userName, orderName, testerName);
+              // Serve an acknowledgement page.
+              await render(
+                'ack',
+                {message: `Successfully created job <strong>${orderName}</strong>.`},
+                response
+              );
             }
             else {
               err('No tester selected', 'creating job', response);
