@@ -38,26 +38,27 @@ const roles = {
 
 // ==== OPERATION UTILITIES ====
 
-// Sends an API response.
+// Sends stringifiable content as an API response.
 const sendAPI = async (content, response) => {
   response.setHeader('Content-Type', 'text/json');
-  await response.end(JSON.stringify({
-    error: content
-  }));
+  await response.end(JSON.stringify(content));
 };
-// Serves content as a page.
+// Serves HTML content as a response.
 const servePage = async (content, location, response) => {
   response.setHeader('Content-Type', 'text/html');
   response.setHeader('Content-Location', location);
   await response.end(content);
 };
-// Replaces the placeholders in a page and serves the page.
+// Replaces the placeholders in content with eponymous query parameters.
+const replaceHolders = (content, query) => content
+.replace(/__([a-zA-Z]+)__/g, (ph, qp) => query[qp]);
+// Serves a page with placeholders replaced.
 const render = async (nameBase, query, response) => {
   if (! response.writableEnded) {
     // Get the page.
     const page = await fs.readFile(`./${nameBase}.html`, 'utf8');
     // Replace its placeholders with eponymous query parameters.
-    const renderedPage = page.replace(/__([a-zA-Z]+)__/g, (ph, qp) => query[qp]);
+    const renderedPage = replaceHolders(page, query);
     // Serve the page.
     await servePage(renderedPage, `/aorta/${nameBase}.html`, response);
   }
@@ -87,9 +88,9 @@ const err = async (error, context, response, isAPI = false) => {
     // Remove any HTML markup from the error message.
     problem = problem.replace(/<.*?>/g, '');
   }
+  // Serve the error message.
   const msg = `Error ${context}: ${problem}`;
   console.log(msg);
-  // Serve the error message.
   if (isAPI) {
     await sendAPI(msg, response);
   }
@@ -128,10 +129,23 @@ const targetSpecs = {
   user: target => target.name,
   tester: target => target.name
 };
-// Adds the scripts, batches, orders, jobs, users, testers, or reports to a query.
-const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
-  // Identify the display format and validity criterion of targets of the specified type.
-  const isValid = target => targetType === 'tester' ? target.roles.includes('test') : true;
+const htmlErrorMessages = {
+  badAuthCode: 'Incorrect username or authorization code.',
+  badUserName: 'Incorrect username or authorization code.',
+  noAuthCode: 'Authorization code missing.',
+  noUserName: 'Username missing.',
+  role: 'You do not have <q>__role__</q> permission.'
+};
+const apiErrorMessages = {
+  badAuthCode: 'badCredentials',
+  badUserName: 'badCredentials',
+  noAuthCode: 'noAuthCode',
+  noUserName: 'noUserName',
+  role: 'role'
+};
+// Get an array of ID-equipped scripts, batches, orders, jobs, users, testers, or reports.
+const getTargets = async targetType => {
+  // Identify the validity criterion of targets of the specified type.
   const dir = targetStrings[targetType][1];
   // For each target:
   const fileNames = await fs.readdir(`.data/${dir}`);
@@ -140,16 +154,22 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
     // Get it.
     const targetJSON = await fs.readFile(`.data/${dir}/${fileName}`);
     const target = JSON.parse(targetJSON);
-    // If the target has no 'id' property (i.e. is a script or batch):
-    if (! target.id) {
-      // Use its filename base as the 'id' property.
-      target.id = fileName.slice(0, -5);
-    }
-    // Add the target to the array of targets, if valid.
-    if (isValid(target)) {
+    // If the target is valid:
+    if (targetType !== 'tester' || target.roles.includes('test')) {
+      // If the target has no 'id' property (i.e. is a script or batch):
+      if (! target.id) {
+        // Use its filename base as an 'id' property.
+        target.id = fileName.slice(0, -5);
+      }
+      // Add the target to the array of targets.
       targets.push(target);
     }
   }
+  return targets;
+};
+// Adds HTML representing the scripts, batches, orders, jobs, users, testers, or reports to a query.
+const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
+  const targets = await getTargets(targetType);
   // Add the targets as a parameter to the query.
   query[htmlKey] = targets.map(target => {
     if (radioName) {
@@ -163,7 +183,7 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
   })
   .join('\n');
 };
-// Adds credential inputs to a query.
+// Adds a credential field set to a query.
 const addYou = query => {
   const youLines = [
     '<fieldset>',
@@ -176,8 +196,8 @@ const addYou = query => {
   ];
   query.you = youLines.join('\n');
 };
-// Returns whether a user exists and has a role.
-const userOK = async (userName, authCode, role, context, response, isAPI) => {
+// Returns whether a user exists and has a role, or why not.
+const userOK = async (userName, authCode, role) => {
   // If a user name was specified:
   if (userName) {
     // If it is an existing user name:
@@ -193,32 +213,63 @@ const userOK = async (userName, authCode, role, context, response, isAPI) => {
         if (authCode === user.authCode) {
           // If no role is required or the user has the specified role:
           if (! role || user.roles.includes(role)) {
-            return true;
+            // Return success.
+            return [];
           }
-          // Otherwise, i.e. if the user does not have the specified role:
           else {
-            err(`You do not have <q>${role}</q> permission`, context, response, isAPI);
-            return false;
+            return ['role', role];
           }
         }
         else {
-          err('Username or authorization code invalid', context, response, isAPI);
-          return false;
+          return ['badAuthCode'];
         }
       }
       else{
-        err('Authorization code missing', context, response, isAPI);
-        return false;
+        return ['noAuthCode'];
       }
     }
     else {
-      err('Username or authorization code invalid', context, response, isAPI);
-      return false;
+      return ['badUserName'];
     }
   }
   else {
-    err('Username missing', context, response, isAPI);
+    return ['noUserName'];
+  }
+};
+// Validates a web user, serves an error page if invalid, and returns the result.
+const screenWebUser = async (userName, authCode, role, context, response) => {
+  const status = await userOK(userName, authCode, role);
+  if (status.length) {
+    const errorCode = status[0];
+    let message = htmlErrorMessages[errorCode];
+    if (errorCode === 'role') {
+      message = message.replace('__role__', role);
+    }
+    await err(message, context, response, false);
     return false;
+  }
+  else {
+    return true;
+  }
+};
+// Validates an API user, sends an error response if invalid, and returns the result.
+const screenAPIUser = async (what, userName, authCode, response) => {
+  let role = '';
+  if (what === 'createJob') {
+    role = 'assign';
+  }
+  else if (what === 'createReport') {
+    role = 'test'
+  }
+  const status = await userOK(userName, authCode, role);
+  if (status.length) {
+    const errorCode = status[0];
+    let message = apiErrorMessages[errorCode];
+    await sendAPI({error: message}, response);
+    return false;
+  }
+  else {
+    return true;
   }
 };
 // Returns a string representing the date and time.
@@ -243,6 +294,44 @@ const writeOrder = async (userName, options, response) => {
   await render(
     'ack', {message: `Successfully created order <strong>${id}</strong>.`}, response
   );
+};
+// Validates a job and returns success or a reason for failure.
+const jobOK = async (fileNameBase, testerName) => {
+  const orderFileNames = await fs.readdir('.data/orders');
+  const orderExists = orderFileNames.some(fileName => fileName === `${fileNameBase}.json`);
+  if (orderExists) {
+    const userFileNames = await fs.readdir('.data/users');
+    const userExists = userFileNames.some(fileName => fileName === `${testerName}.json`);
+    if (userExists) {
+      const userJSON = await fs.readFile(`.data/users/${testerName}.json`, 'utf8');
+      const user = JSON.parse(userJSON);
+      return user.roles.includes('test') ? '' : 'nonTester';
+    }
+    else {
+      return 'nonUser';
+    }
+  }
+  else {
+    return 'nonOrder';
+  }
+}
+// Validates a report and returns success or a reason for failure.
+const reportOK = (reportJSON, userName) => {
+  try {
+    const report = JSON.parse(reportJSON);
+    if (report.tester !== userName) {
+      return 'otherTester';
+    }
+    else if (! report.id) {
+      return 'noID';
+    }
+    else if (! /^[a-z0-9]+$/.test(report.id)) {
+      return 'badID';
+    }
+  }
+  catch(error) {
+    return 'badJSON';
+  }
 };
 // Assigns an order to a tester.
 const writeJob = async (assignedBy, fileNameBase, testerName) => {
@@ -331,40 +420,50 @@ const requestHandler = (request, response) => {
       if (requestURL === '/aorta/api') {
         const {what, userName, authCode} = bodyObject;
         // If the user exists and is authorized to make the request:
-        if (apiUserOK(what, userName, authCode, response)) {
+        if (screenAPIUser(what, userName, authCode, response)) {
           // If the request is to see the orders:
           if (what === 'seeOrders') {
             // Get them.
-            const orders = await apiGet('order');
+            const orders = await getTargets('order');
             // Send them.
-            apiSend(orders, response);
+            sendAPI(orders, response);
           }
-          // Otherwise, if the request is to create a job:
+          // Otherwise, if the request is to see the jobs assigned to the requester:
+          if (what === 'seeJobs') {
+            // Get them.
+            const allJobs = await getTargets('job');
+            const ownJobs = allJobs.filter(job => job.tester === userName);
+            // Send them.
+            sendAPI(ownJobs, response);
+          }
+          // Otherwise, if the request is to create a job assigned to the requester:
           else if (what === 'createJob') {
             // If the request is valid:
-            const {orderName, testerName} = bodyObject;
-            if (apiJobOK(orderName, testerName)) {
+            const {orderName} = bodyObject;
+            const jobError = jobOK(orderName, userName);
+            if (jobError) {
+              await sendAPI({error: jobError}, response);
+            }
+            else {
               // Create the job.
-              await writeJob(userName, orderName, testerName);
+              await writeJob(userName, orderName, userName);
               // Send an acknowledgement.
-              await apiSend({success: 'Job created'});
+              await sendAPI({success: 'jobCreated'}, response);
             }
           }
           // Otherwise, if the request is to create a report:
           else if (what === 'createReport') {
             const {report} = bodyObject;
             // If the report is valid:
-            try {
-              const reportObj = JSON.parse(report);
-              const reportName = reportObj.id;
-              if (reportName && typeof reportName === 'string') {
-                if (reportOK(report)) {
-                  // Create it.
-                  await fs.writeFile(`.data/reports/${targetName}.json`, target);
-                }
-              }
+            const reportError = reportOK(report, userName);
+            if (reportError) {
+              await sendAPI({error: reportError}, response);
             }
-            if (apiReportOK(report)) {
+            else {
+              // Create the report.
+              await writeReport(report);
+              // Send an acknowledgement.
+              await sendAPI({success: 'reportCreated'}, response);
             }
           }
         }
@@ -377,9 +476,9 @@ const requestHandler = (request, response) => {
             // If the action is to see:
             if (action === 'see') {
               // If the user exists and has permission for the action:
-              if (
-                await userOK(userName, authCode, roles[targetType][0], 'identifying action', response)
-              ) {
+              if (await screenWebUser(
+                userName, authCode, roles[targetType][0], 'identifying action', response
+              )) {
                 // Create a query.
                 query.targetType = targetType;
                 await addQueryTargets(query, targetType, 'targets', 'targetName');
@@ -392,9 +491,9 @@ const requestHandler = (request, response) => {
             // Otherwise, if the action is to create:
             else if (action === 'create') {
               // If the user exists and has permission for the action:
-              if (
-                await userOK(userName, authCode, roles[targetType][1], 'identifying action', response)
-              ) {
+              if (await screenWebUser(
+                userName, authCode, roles[targetType][1], 'identifying action', response
+              )) {
                 // Create a query.
                 query.targetType = targetType;
                 addYou(query);
@@ -422,9 +521,9 @@ const requestHandler = (request, response) => {
             // Otherwise, if the action is to remove:
             else if (action === 'remove') {
               // If the user exists and has permission for the action:
-              if (
-                await userOK(userName, authCode, roles[targetType][2], 'identifying action', response)
-              ) {
+              if (await screenWebUser(
+                userName, authCode, roles[targetType][2], 'identifying action', response
+              )) {
                 // Create a query.
                 query.targetType = targetType;
                 await addQueryTargets(query, targetType, 'targets', 'targetName');
@@ -446,7 +545,7 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/seeTarget') {
         // If the user exists and has permission to see the target:
         const {userName, authCode, targetType, targetName} = bodyObject;
-        if (await userOK(
+        if (await screenWebUser(
           userName, authCode, roles[targetType][0], `retrieving ${targetType}`, response
         )) {
           // If the target was specified:
@@ -469,7 +568,7 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/createOrder') {
         // If the user exists and is authorized to create orders:
         const {userName, authCode, scriptName, batchName} = bodyObject;
-        if (await userOK(userName, authCode, 'order', 'creating order', response)) {
+        if (await screenWebUser(userName, authCode, 'order', 'creating order', response)) {
           // If a script was specified:
           if (scriptName) {
             // Get it and initialize the order options.
@@ -501,7 +600,7 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/createJob') {
         // If the user exists and is authorized to create jobs:
         const {userName, authCode, orderName, testerName} = bodyObject;
-        if (await userOK(userName, authCode, 'assign', 'creating job', response)) {
+        if (await screenWebUser(userName, authCode, 'assign', 'creating job', response)) {
           // If an order was specified:
           if (orderName) {
             // If a tester was specified:
@@ -529,9 +628,9 @@ const requestHandler = (request, response) => {
         // If the user exists and is authorized to create targets of the specified type:
         const {userName, authCode, targetType, target} = bodyObject;
         let {targetName} = bodyObject;
-        if (
-          await userOK(userName, authCode, roles[targetType][1], `creating ${targetType}`, response)
-        ) {
+        if (await screenWebUser(
+          userName, authCode, roles[targetType][1], `creating ${targetType}`, response
+        )) {
           // If a target was specified:
           if (target) {
             try {
@@ -573,9 +672,9 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/removeTarget') {
         // If the user exists and has permission for the action:
         const {userName, authCode, targetType, targetName} = bodyObject;
-        if (
-          await userOK(userName, authCode, roles[targetType][2], `removing ${targetType}`, response)
-        ) {
+        if (await screenWebUser(
+          userName, authCode, roles[targetType][2], `removing ${targetType}`, response
+        )) {
           // If the target was specified:
           if (targetName) {
             // Delete it.
