@@ -434,12 +434,12 @@ const requestHandler = (request, response) => {
         console.log(`API ${what} request received from ${userName}`);
         // If the user exists and is authorized to make the request:
         if (screenAPIUser(what, userName, authCode, response)) {
-          console.log('User authorized');
+          console.log('User is authorized');
           // If the request is to see the orders:
           if (what === 'seeOrders') {
             // Get them.
             const orders = await getTargets('order');
-            console.log('Got orders');
+            console.log('Orders retrieved');
             // Send them.
             sendAPI(orders, response);
           }
