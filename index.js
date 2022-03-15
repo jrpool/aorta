@@ -145,9 +145,8 @@ const apiErrorMessages = {
 };
 // Get an array of ID-equipped scripts, batches, orders, jobs, users, testers, or reports.
 const getTargets = async targetType => {
-  // Identify the validity criterion of targets of the specified type.
-  const dir = targetStrings[targetType][1];
   // For each target:
+  const dir = targetStrings[targetType][1];
   const fileNames = await fs.readdir(`.data/${dir}`);
   let targets = [];
   for (const fileName of fileNames) {
@@ -316,21 +315,34 @@ const jobOK = async (fileNameBase, testerName) => {
   }
 }
 // Validates a report and returns success or a reason for failure.
-const reportOK = (reportJSON, userName) => {
+const reportOK = async (reportJSON, userName) => {
   try {
     const report = JSON.parse(reportJSON);
-    if (report.tester !== userName) {
-      return 'otherTester';
+    const {id, tester} = report;
+    if (! tester) {
+      return ['error', 'noTester'];
     }
-    else if (! report.id) {
-      return 'noID';
+    else if (tester !== userName) {
+      return ['error', 'testerNotYou'];
     }
-    else if (! /^[a-z0-9]+$/.test(report.id)) {
-      return 'badID';
+    else if (! id) {
+      return ['error', 'noID'];
+    }
+    else if (! /^[a-z0-9]+$/.test(id)) {
+      return ['error', 'invalidID'];
+    }
+    else {
+      const reportFileNames = await fs.readdir('.data/reports');
+      if (reportFileNames.some(fileName => fileName === `${id}.json`)) {
+        return ['error', 'existingReportID'];
+      }
+      else {
+        return ['id', id];
+      }
     }
   }
   catch(error) {
-    return 'badJSON';
+    return ['error', 'badJSON'];
   }
 };
 // Assigns an order to a tester.
@@ -429,7 +441,7 @@ const requestHandler = (request, response) => {
             sendAPI(orders, response);
           }
           // Otherwise, if the request is to see the jobs assigned to the requester:
-          if (what === 'seeJobs') {
+          else if (what === 'seeJobs') {
             // Get them.
             const allJobs = await getTargets('job');
             const ownJobs = allJobs.filter(job => job.tester === userName);
@@ -455,13 +467,13 @@ const requestHandler = (request, response) => {
           else if (what === 'createReport') {
             const {report} = bodyObject;
             // If the report is valid:
-            const reportError = reportOK(report, userName);
-            if (reportError) {
-              await sendAPI({error: reportError}, response);
+            const reportStatus = reportOK(report, userName);
+            if (reportStatus[0] === 'error') {
+              await sendAPI({error: reportStatus[1]}, response);
             }
             else {
               // Create the report.
-              await writeReport(report);
+              await fs.writeFile(`.data/reports/${reportStatus[1]}.json`, target);
               // Send an acknowledgement.
               await sendAPI({success: 'reportCreated'}, response);
             }
