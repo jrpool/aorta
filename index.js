@@ -6,7 +6,7 @@
 // ########## IMPORTS
 
 // Modules to access files.
-const fs = require('fs/promises');
+const fs = require('fs').promises;
 const {readFileSync} = require('fs');
 // Environment variables
 try {
@@ -431,12 +431,15 @@ const requestHandler = (request, response) => {
       // If it is an API request:
       if (requestURL === '/aorta/api') {
         const {what, userName, authCode} = bodyObject;
+        console.log(`API ${what} request received from ${userName}`);
         // If the user exists and is authorized to make the request:
         if (screenAPIUser(what, userName, authCode, response)) {
+          console.log('User authorized');
           // If the request is to see the orders:
           if (what === 'seeOrders') {
             // Get them.
             const orders = await getTargets('order');
+            console.log('Got orders');
             // Send them.
             sendAPI(orders, response);
           }
