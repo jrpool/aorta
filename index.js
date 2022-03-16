@@ -427,7 +427,9 @@ const requestHandler = (request, response) => {
     // METHOD POST: Otherwise, if the request submits a form:
     else if (method === 'POST') {
       // Get the data.
-      const bodyObject = parse(Buffer.concat(bodyParts).toString());
+      const body = Buffer.concat(bodyParts).toString();
+      console.log(body);
+      const bodyObject = requestURL === '/aorta/api' ? JSON.parse(body) : parse(body);
       // If it is an API request:
       if (requestURL === '/aorta/api') {
         const {what, userName, authCode} = bodyObject;
