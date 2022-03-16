@@ -201,7 +201,7 @@ const userOK = async (userName, authCode, role) => {
   if (userName) {
     // If it is an existing user name:
     const userFileNames = await fs.readdir('.data/users');
-    const userIndex = userFileNames.findIndex(fileName => fileName.slice(0, -5) === userName);
+    const userIndex = userFileNames.findIndex(fileName => fileName === `${userName}.json`);
     if (userIndex > -1) {
       // Get data on the user.
       const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
@@ -428,20 +428,16 @@ const requestHandler = (request, response) => {
     else if (method === 'POST') {
       // Get the data.
       const body = Buffer.concat(bodyParts).toString();
-      console.log(body);
       const bodyObject = requestURL === '/aorta/api' ? JSON.parse(body) : parse(body);
       // If it is an API request:
       if (requestURL === '/aorta/api') {
         const {what, userName, authCode} = bodyObject;
-        console.log(`API ${what} request received from ${userName}`);
         // If the user exists and is authorized to make the request:
-        if (screenAPIUser(what, userName, authCode, response)) {
-          console.log('User is authorized');
+        if (await screenAPIUser(what, userName, authCode, response)) {
           // If the request is to see the orders:
           if (what === 'seeOrders') {
             // Get them.
             const orders = await getTargets('order');
-            console.log('Orders retrieved');
             // Send them.
             sendAPI(orders, response);
           }
@@ -483,10 +479,14 @@ const requestHandler = (request, response) => {
               await sendAPI({success: 'reportCreated'}, response);
             }
           }
+          // Otherwise, if the request is invalid:
+          else {
+            await sendAPI({error: 'badRequest'});
+          }
         }
       }
       // Otherwise, if it is the home-page form:
-      if (requestURL === '/aorta/action') {
+      else if (requestURL === '/aorta/action') {
         const {action, targetType, userName, authCode} = bodyObject;
         if (action) {
           if (targetType) {
