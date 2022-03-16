@@ -279,13 +279,15 @@ const nowString = () => (new Date()).toISOString().slice(0, 19);
 // Writes an order and serves an acknowledgement page.
 const writeOrder = async (userName, options, response) => {
   const id = Math.floor((Date.now() - Date.UTC(2022, 1)) / 500).toString(36);
-  const {scriptName, batchName, script, batch} = options;
+  const {scriptName, batchName, scriptIsValid, batchIsValid, script, batch} = options;
   const data = {
     id,
     userName,
     orderTime: nowString(),
     scriptName,
     batchName: batchName || '',
+    scriptIsValid,
+    batchIsValid,
     script
   };
   if (batch) {
