@@ -254,8 +254,11 @@ const screenWebUser = async (userName, authCode, role, context, response) => {
 // Validates an API user, sends an error response if invalid, and returns the result.
 const screenAPIUser = async (what, userName, authCode, response) => {
   let role = '';
-  if (what === 'createJob') {
-    role = 'assign';
+  if (what === 'claimOrder') {
+    role = 'test';
+  }
+  else if (what === 'assignOrder') {
+    role = 'assign'
   }
   else if (what === 'createReport') {
     role = 'test'
@@ -358,25 +361,19 @@ const writeJob = async (assignedBy, fileNameBase, testerName) => {
   order.log = [];
   order.reports = [];
   // Write it as a job, to be used as a Testaro options object in handleRequest().
-  await fs.writeFile(`.data/jobs/${orderNameBase}.json`, JSON.stringify(order, null, 2));
+  await fs.writeFile(`.data/jobs/${fileNameBase}.json`, JSON.stringify(order, null, 2));
   // Delete it as an order.
-  await fs.rm(`.data/orders/${orderNameBase}.json`);
+  await fs.rm(`.data/orders/${fileNameBase}.json`);
 };
 // Gets the content of a script or batch.
 const getOrderPart = async (fileNameBase, partDir) => {
   try {
     const partJSON = await fs.readFile(`.data/${partDir}/${fileNameBase}.json`, 'utf8');
     const content = JSON.parse(partJSON);
-    return {
-      isValid: true,
-      content
-    };
+    return content;
   }
   catch(error) {
-    return {
-      isValid: false,
-      error
-    }
+    return {error}
   }
 };
 // Handles requests.
@@ -450,10 +447,10 @@ const requestHandler = (request, response) => {
             sendAPI(ownJobs, response);
           }
           // Otherwise, if the request is to create a job assigned to the requester:
-          else if (what === 'createJob') {
+          else if (what === 'claimOrder') {
             // If the request is valid:
             const {orderName} = bodyObject;
-            const jobError = jobOK(orderName, userName);
+            const jobError = await jobOK(orderName, userName);
             if (jobError) {
               await sendAPI({error: jobError}, response);
             }
@@ -461,7 +458,22 @@ const requestHandler = (request, response) => {
               // Create the job.
               await writeJob(userName, orderName, userName);
               // Send an acknowledgement.
-              await sendAPI({success: 'jobCreated'}, response);
+              await sendAPI({success: 'orderClaimed'}, response);
+            }
+          }
+          // Otherwise, if the request is to create a job assigned to another tester:
+          else if (what === 'assignOrder') {
+            // If the request is valid:
+            const {orderName, testerName} = bodyObject;
+            const jobError = await jobOK(orderName, testerName);
+            if (jobError) {
+              await sendAPI({error: jobError}, response);
+            }
+            else {
+              // Create the job.
+              await writeJob(userName, orderName, userName);
+              // Send an acknowledgement.
+              await sendAPI({success: 'orderAssigned'}, response);
             }
           }
           // Otherwise, if the request is to create a report:
@@ -593,6 +605,7 @@ const requestHandler = (request, response) => {
               scriptName,
               script: await getOrderPart(scriptName, 'scripts')
             };
+            options.scriptIsValid = options.script.hasOwnProperty('what');
             // If a batch was specified or waived:
             if (batchName) {
               // If it was not waived:
@@ -600,6 +613,7 @@ const requestHandler = (request, response) => {
                 // Get the batch and add it to the order options.
                 options.batchName = batchName;
                 options.batch = await getOrderPart(batchName, 'batches');
+                options.batchIsValid = options.batch.hasOwnProperty('what');
               }
               // Write the order and serve an acknowledgement page.
               await writeOrder(userName, options, response);
