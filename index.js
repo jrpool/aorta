@@ -482,13 +482,16 @@ const requestHandler = (request, response) => {
           else if (what === 'createReport') {
             const {report} = bodyObject;
             // If the report is valid:
-            const reportStatus = reportOK(report, userName);
+            const reportJSON = JSON.stringify(report);
+            const reportStatus = await reportOK(reportJSON, userName);
             if (reportStatus[0] === 'error') {
               await sendAPI({error: reportStatus[1]}, response);
             }
             else {
               // Create the report.
-              await fs.writeFile(`.data/reports/${reportStatus[1]}.json`, target);
+              await fs.writeFile(
+                `.data/reports/${reportStatus[1]}.json`, JSON.stringify(report, null, 2)
+              );
               // Send an acknowledgement.
               await sendAPI({success: 'reportCreated'}, response);
             }
