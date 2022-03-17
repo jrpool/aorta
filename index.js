@@ -337,13 +337,7 @@ const reportOK = async (reportJSON, userName) => {
       return ['error', 'invalidID'];
     }
     else {
-      const reportFileNames = await fs.readdir('.data/reports');
-      if (reportFileNames.some(fileName => fileName === `${id}.json`)) {
-        return ['error', 'existingReportID'];
-      }
-      else {
-        return ['id', id];
-      }
+      return ['id', id];
     }
   }
   catch(error) {
