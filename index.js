@@ -486,6 +486,8 @@ const requestHandler = (request, response) => {
               await fs.writeFile(
                 `.data/reports/${reportStatus[1]}.json`, JSON.stringify(report, null, 2)
               );
+              // Delete the job.
+              await fs.rm(`.data/jobs/${reportStatus[1]}.json`);
               // Send an acknowledgement.
               await sendAPI({success: 'reportCreated'}, response);
             }
