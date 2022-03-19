@@ -31,6 +31,7 @@ const roles = {
   order: ['', 'order', 'manage'],
   job: ['', 'assign', 'manage'],
   report: ['read', 'test', 'manage'],
+  digest: ['read', 'read', 'manage'],
   user: ['manage', 'manage', 'manage']
 };
 
@@ -117,6 +118,7 @@ const targetStrings = {
   order: ['Orders', 'orders'],
   job: ['Jobs', 'jobs'],
   report: ['Reports', 'reports'],
+  digest: ['Digests', 'digests'],
   user: ['Users', 'users'],
   tester: ['Testers', 'users']
 };
@@ -125,7 +127,11 @@ const targetSpecs = {
   batch: target => target.what,
   order: target => orderSpecs(target),
   job: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
-  report: target => `${target.id}: ${target.userName}`,
+  report: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
+  digest: (target, index) => {
+    const hostPart = index ? `, host ${target.reports[index].id}` : '';
+    return `${orderSpecs(target)}${hostPart}, tester <strong>${target.tester}</strong>`;
+  },
   user: target => target.name,
   tester: target => target.name
 };
@@ -142,6 +148,34 @@ const apiErrorMessages = {
   noAuthCode: 'noAuthCode',
   noUserName: 'noUserName',
   role: 'role'
+};
+// Get an array of digests.
+const getDigests = async () => {
+  // For each report:
+  const fileNames = await fs.readdir(`.data/${dir}`);
+  let digests = [];
+  for (const fileName of fileNames) {
+    // Get it.
+    const reportJSON = await fs.readFile(`.data/reports/${fileName}`);
+    const report = JSON.parse(reportJSON);
+    // If the job had a batch:
+    if (report.batchName) {
+      // For each host in the batch:
+      const hostCount = report.reports.length;
+      for (let i = 0; i < hostCount; i++) {
+        // Create a digest and add it to the array of digests.
+        const digest = writeDigest(report, i);
+        digests.push(digest);
+      }
+    }
+    // Otherwise, i.e. if the job had no batch:
+    else {
+      // Create a digest and add it to the array of digests.
+      const digest = writeDigest(report, -1);
+      digests.push(digest);
+    }
+  }
+  return digests;
 };
 // Get an array of ID-equipped scripts, batches, orders, jobs, users, testers, or reports.
 const getTargets = async targetType => {
@@ -166,10 +200,26 @@ const getTargets = async targetType => {
   }
   return targets;
 };
-// Adds HTML representing the scripts, batches, orders, jobs, users, testers, or reports to a query.
+// Adds the digest HTML items to a query.
+const addQueryDigests = async (query, radioName) => {
+  const digests = await getDigests();
+  // Add the digest items as a parameter to the query.
+  query.digests = digests.map(digest => {
+    if (radioName) {
+      const input = `<input type="radio" name="${radioName}" value="${digest.id}" required>`;
+      const specs = targetSpecs.digest(digest);
+      return `<div><label>${input} <strong>${digest.id}</strong>: ${specs}</label></div>`;
+    }
+    else {
+      return `<li><strong>${digest.id}</strong>: ${targetSpecs.digest(digest)}</li>`;
+    }
+  })
+  .join('\n');
+};
+// Adds the script, batch, order, job, user, tester, or report HTML items to a query.
 const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
   const targets = await getTargets(targetType);
-  // Add the targets as a parameter to the query.
+  // Add the target items as a parameter to the query.
   query[htmlKey] = targets.map(target => {
     if (radioName) {
       const input = `<input type="radio" name="${radioName}" value="${target.id}" required>`;
@@ -299,6 +349,19 @@ const writeOrder = async (userName, options, response) => {
     'ack', {message: `Successfully created order <strong>${id}</strong>.`}, response
   );
 };
+// Writes a digest and serves an acknowledgement page.
+const writeDigest = async (reportName) => {
+  const reportJSON = await fs.readFile(`.data/reports/${reportName}.json`, 'utf8');
+  const report = JSON.parse(reportJSON);
+  const digestType = report.scriptName;
+  const template = await fs.readFile(`${__dirname}/digestMakers/${digestType}.html`, 'utf8');
+  const {parameters} = require(`${__dirname}/digestMakers/${digestType}`);
+  await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
+  // Serve an acknowledgement page.
+  await render(
+    'ack', {message: `Successfully created order <strong>${id}</strong>.`}, response
+  );
+};
 // Validates a job and returns success or a reason for failure.
 const jobOK = async (fileNameBase, testerName) => {
   const orderFileNames = await fs.readdir('.data/orders');
@@ -344,7 +407,7 @@ const reportOK = async (reportJSON, userName) => {
     return ['error', 'badJSON'];
   }
 };
-// Assigns an order to a tester.
+// Assigns an order to a tester, creating a job.
 const writeJob = async (assignedBy, fileNameBase, testerName) => {
   // Get the order.
   const orderJSON = await fs.readFile(`.data/orders/${fileNameBase}.json`, 'utf8');
@@ -539,6 +602,10 @@ const requestHandler = (request, response) => {
                   await addQueryTargets(query, 'order', 'orders', 'orderName');
                   await addQueryTargets(query, 'tester', 'testers', 'testerName');
                 }
+                else if (targetType === 'digest') {
+                  pageName = 'createDigests';
+                  await addQueryTargets(query, 'report', 'reports', 'reportName');
+                }
                 else if (['report', 'user'].includes(targetType)) {
                   pageName = 'createNamed';
                 }
@@ -655,6 +722,27 @@ const requestHandler = (request, response) => {
           }
         }
       }
+      // Otherwise, if the form creates a digest:
+      else if (requestURL === '/aorta/createDigest') {
+        // If the user exists and is authorized to create digests:
+        const {userName, authCode, orderName, testerName} = bodyObject;
+        if (await screenWebUser(userName, authCode, 'read', 'creating digest', response)) {
+          // If a report was specified:
+          if (reportName) {
+            // Create the digest.
+            await writeDigest(reportName);
+            // Serve an acknowledgement page.
+            await render(
+              'ack',
+              {message: `Successfully created digest <strong>${reportName}</strong>.`},
+              response
+            );
+          }
+          else {
+            err('No report selected', 'creating job', response);
+          }
+        }
+      }
       // Otherwise, if the form creates a script, batch, report, or user:
       else if (requestURL === '/aorta/createTarget') {
         // If the user exists and is authorized to create targets of the specified type:
@@ -666,9 +754,11 @@ const requestHandler = (request, response) => {
           // If a target was specified:
           if (target) {
             try {
-              // Identify its name.
+              // Parse it as JSON.
               const targetObj = JSON.parse(target);
+              // If it has a content-derived name:
               if (['report', 'user'].includes(targetType)) {
+                // Derive the name.
                 targetName = targetObj.id;
               }
               // If the name has a valid format:
@@ -682,6 +772,11 @@ const requestHandler = (request, response) => {
                 else {
                   // Create the target.
                   await fs.writeFile(`.data/${dir}/${targetName}.json`, target);
+                  // If the target is a report:
+                  if (targetType === 'report') {
+                    // Delete any existing digest of a prior version of the same report.
+                    await fs.rm(`.data/digests/${targetName}.json`, {force: true});
+                  }
                   // Serve an acknowledgement page.
                   query.message = `Successfully created ${targetType} <strong>${targetName}</strong>.`;
                   await render('ack', query, response);
