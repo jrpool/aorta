@@ -6,30 +6,35 @@
     <meta name="author" content="__testerName__">
     <meta name="creator" content="__testerName__">
     <meta name="publisher" name="__testerName__">
-    <meta name="description" content="report on results of  procedure">
+    <meta name="description" content="report on results of __scoreProc__ procedure">
     <meta name="keywords" content="accessibility a11y web testing">
     <title>Accessibility test report</title>
-    <link rel="stylesheet" href="../../../../../site/style.css">
+    <link rel="stylesheet" href="__dirname/../../style.css">
   </head>
   <body>
     <main>
       <header>
-        <h1>Accessibility test report</h1>
+        <h1>Accessibility test digest</h1>
         <p class="summary">__org__</p>
-        <p class="summary">Autotest <code>__scoreProc__</code>, version __version__</p>
+        <p class="summary">Testaro, <code>__scoreProc__</code> procedure</p>
         <p class="summary">Score: __totalScore__</p>
       </header>
       <h2>Introduction</h2>
-      <p>In a <a href="../index.html">comparison</a> of the <a hrlef="https://www.w3.org/WAI/fundamentals/">accessibility</a> of web pages, <a href="__url__">__org__</a> received a score of __totalScore__ (where 0 is the best possible score). This report explains how that score was computed.</p>
-      <p>The pages were tested with version __version__ of the <code>__scoreProc__</code> procedure of <a href="https://jpdev.pro/jpdev/blog/entries/0020/index.html">Autotest</a>. A total of 525 tests (of which 509 were bundled into 4 packages) were performed on each page. The resulting data were saved in a <a href="../jsonReports/__file__">JSON-format file</a>.</p>
+      <p>As an experimental measure of <a hrlef="https://www.w3.org/WAI/fundamentals/">accessibility</a>, the __scoreProc__ procedure of <a href="https://www.npmjs.com/package/testaro">Testaro</a> was executed on the URL <a href="__url__">__url__</a>, belonging to __org__, on __dateSlash__. The procedure performed 627 tests and reported a total score of __totalScore__ (where 0 is the best possible score). This digest explains how that score was computed.</p>
+      <p>This digest is based on the test report, which can be viewed with <a href="/">Aorta</a>. The ID of the report is __reportID__.</p>
       <p>These tests&mdash;like all tests&mdash;are fallible. The failures described below merit investigation as <strong>potential</strong> opportunities for improved accessibility.</p>
       <h2>Summary</h2>
       <p>The packages&rsquo; and tests&rsquo; contributions to the score were:</p>
-      <table class="allBorder secondCellRight"><tbody class="headersLeft">
-        __deficitRows__
+      <table class="allBorder secondCellRight">
+        <caption>Score components</caption>
+        <tbody class="headersLeft">
+        __scoreRows__
       </tbody></table>
       <h2>Test packages</h2>
-      <p>Most of the tests belong to the following four accessibility test packages created by other specialists.</p>
+      <p>Most of the tests belong to the following five accessibility test packages created by various groups of specialists.</p>
+      <h3><code>alfa</code></h3>
+      __alfaResult__
+      <p><a href="https://github.com/Siteimprove/alfa">Alfa</a> is an open-source package sponsored by Siteimprove. The <code>alfa</code> test performs all 103 tests in the Alfa package.</p>
       <h3><code>aatt</code></h3>
       __aattResult__
       <p><a href="https://github.com/paypal/AATT">AATT</a> is an open-source package sponsored by PayPal. The <code>aatt</code> test performs all 98 WCAG 2.1 AA tests in the HTML CodeSniffer ruleset.</p>
@@ -43,7 +48,7 @@
       __waveResult__
       <p><a href="https://wave.webaim.org/">WAVE</a> is a proprietary package owned by webAIM, a program of the Institute for Disability Research, Policy, and Practice at Utah State University. The <code>wave</code> test performs all 110 default tests in the WAVE package.</p>
       <h2>Custom tests</h2>
-      <p>The tests in the above packages are designed to detect some, not all, accessibility problems. The procedure includes the following custom tests that supplement the tests of the packages.</p>
+      <p>The tests in the above packages are designed to detect some, not all, accessibility problems. The procedure includes the following 16 custom tests that supplement the tests of the packages.</p>
       <h3><code>bulk</code></h3>
       __bulkResult__
       <p>The <code>bulk</code> test counts the initially visible elements in a page. A page with a large count tends to be complex and busy, frustrating some users, especially if they have visual or motor disabilities, as they try to determine what the page is about, whether it is relevant, and how to find a specific thing in it.</p>
@@ -110,7 +115,7 @@
       <p>Some pages prevent some of the tests in this procedure from being performed. This may occur, for example, when a page tries to block any non-human visitor. The procedure estimates high scores when pages prevent tests, because preventing accessibility testing is itself an accessibility deficiency. Specifically:</p>
       <ul>
         <li>Measuring success is a prerequisite for achieving success, so interfering with accessibility measurement interferes with accessibility.</li>
-        <li>Users with disabilities often rely on assistive technologies to mediate between them and web applications. Measures that interfere with automated testing are at risk of interfering with some assistive technologies, too.</li>
+        <li>Users with disabilities often rely on assistive technologies to mediate between them and web applications. Applications that interfere with automated testing are at risk of interfering with some assistive technologies, too.</li>
       </ul>
       <footer>
         <p class="date">Produced <time itemprop="datePublished" datetime="__dateISO__">__dateSlash__</time></p>
