@@ -253,10 +253,16 @@ const addDigestables = async (query, isRadio) => {
     const {reports} = report;
     if (isRadio) {
       return reports.map(hostReport => {
-        const fullID = `${report.id}-${hostReport.id}`;
-        const input = `<input type="radio" name="reportName" value="${fullID}" required>`;
+        const input = `<input type="radio" name="reportName" value="${hostReport.id}" required>`;
         const specs = targetSpecs.report(report);
-        return `<div><label>${input} <strong>${fullID}</strong>: ${specs}</label></div>`;
+        return `<div><label>${input} <strong>${hostReport.id}</strong>: ${specs}</label></div>`;
+      })
+      .join('\n');
+    }
+    else {
+      return reports.map(hostReport => {
+        const specs = targetSpecs.report(hostReport);
+        return `<li><strong>${hostReport.id}</strong>: ${specs}</label></li>`;
       })
       .join('\n');
     }
@@ -757,7 +763,7 @@ const requestHandler = (request, response) => {
       // Otherwise, if the form creates a digest:
       else if (requestURL === '/aorta/createDigest') {
         // If the user exists and is authorized to create digests:
-        const {userName, authCode, orderName, testerName} = bodyObject;
+        const {userName, authCode, reportName} = bodyObject;
         if (await screenWebUser(userName, authCode, 'read', 'creating digest', response)) {
           // If a report was specified:
           if (reportName) {
