@@ -151,27 +151,15 @@ const apiErrorMessages = {
 };
 // Get an array of digests.
 const getDigests = async () => {
-  // For each report:
-  const fileNames = await fs.readdir(`.data/${dir}`);
-  let digests = [];
+  // For each digest:
+  const fileNames = await fs.readdir('.data/digests');
+  const digests = [];
   for (const fileName of fileNames) {
     // Get it.
-    const reportJSON = await fs.readFile(`.data/reports/${fileName}`);
-    const report = JSON.parse(reportJSON);
-    // If the job had a batch:
-    if (report.batchName) {
-      // For each host in the batch:
-      const hostCount = report.reports.length;
-      for (let i = 0; i < hostCount; i++) {
-        // Create a digest and add it to the array of digests.
-        const digest = writeDigest(report, i);
-        digests.push(digest);
-      }
-    }
-    // Otherwise, i.e. if the job had no batch:
-    else {
-      // Create a digest and add it to the array of digests.
-      const digest = writeDigest(report, -1);
+    const digestJSON = await fs.readFile(`.data/digests/${fileName}`);
+    const digest = JSON.parse(digestJSON);
+    // If the digest is valid:
+    if (fileName.endsWith('.html')) {
       digests.push(digest);
     }
   }
@@ -182,7 +170,7 @@ const getTargets = async targetType => {
   // For each target:
   const dir = targetStrings[targetType][1];
   const fileNames = await fs.readdir(`.data/${dir}`);
-  let targets = [];
+  const targets = [];
   for (const fileName of fileNames) {
     // Get it.
     const targetJSON = await fs.readFile(`.data/${dir}/${fileName}`);
@@ -389,15 +377,23 @@ const writeOrder = async (userName, options, response) => {
 };
 // Writes a digest and serves an acknowledgement page.
 const writeDigest = async (reportName) => {
-  const reportJSON = await fs.readFile(`.data/reports/${reportName}.json`, 'utf8');
-  const report = JSON.parse(reportJSON);
-  const digestType = report.scriptName;
-  const template = await fs.readFile(`${__dirname}/digestMakers/${digestType}.html`, 'utf8');
-  const {parameters} = require(`${__dirname}/digestMakers/${digestType}`);
-  await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
+  const hasBatch = reportName.index > -1;
+  const fileNameBase = hasBatch ? reportName.replace(/-.+$/, '') : reportName;
+  const fileJSON = await fs.readFile(`.data/reports/${fileNameBase}.json`, 'utf8');
+  const fileObj = JSON.parse(fileJSON);
+  const report = hasBatch
+  ? fileObj.reports.filter(hostReport => reportName.endsWith(hostReport.id))[0]
+  : fileObj;
+  const query = {};
+  const {scriptName} = report;
+  const {parameters} = require(`${__dirname}/digesters/${scriptName}`);
+  parameters(report, query);
+  const template = await fs.readFile(`.data/digesters/${scriptName}.html`);
+  const digest = replaceHolders(template, query);
+  await fs.writeFile(`.data/digests/${reportName}.json`, digest);
   // Serve an acknowledgement page.
   await render(
-    'ack', {message: `Successfully created order <strong>${id}</strong>.`}, response
+    'ack', {message: `Successfully created digest <strong>${reportName}</strong>.`}, response
   );
 };
 // Validates a job and returns success or a reason for failure.
@@ -612,7 +608,12 @@ const requestHandler = (request, response) => {
               )) {
                 // Create a query.
                 query.targetType = targetType;
-                await addQueryTargets(query, targetType, 'targets', 'targetName');
+                if (targetType === 'digest') {
+                  await addQueryDigests(query, 'targetName');
+                }
+                else {
+                  await addQueryTargets(query, targetType, 'targets', 'targetName');
+                }
                 query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
                 addYou(query);
                 // Serve the target-choice page.
