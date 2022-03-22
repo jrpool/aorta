@@ -232,6 +232,38 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
   })
   .join('\n');
 };
+// Adds the digestable HTML items to a query.
+const addDigestables = async (query, isRadio) => {
+  const reports = await getTargets('report');
+  const noBatchReports = reports.filter(report => ! report.batchName);
+  const batchReports = reports.filter(report => report.batchName);
+  // Add the no-batch reports as a parameter to the query.
+  noBatchHTML = noBatchReports.map(report => {
+    if (isRadio) {
+      const input = `<input type="radio" name="reportName" value="${report.id}" required>`;
+      const specs = targetSpecs.report(report);
+      return `<div><label>${input} <strong>${report.id}</strong>: ${specs}</label></div>`;
+    }
+    else {
+      return `<li><strong>${target.id}</strong>: ${targetSpecs[targetType](target)}</li>`;
+    }
+  })
+  .join('\n');
+  batchHTML = batchReports.map(report => {
+    const {reports} = report;
+    if (isRadio) {
+      return reports.map(hostReport => {
+        const fullID = `${report.id}-${hostReport.id}`;
+        const input = `<input type="radio" name="reportName" value="${fullID}" required>`;
+        const specs = targetSpecs.report(report);
+        return `<div><label>${input} <strong>${fullID}</strong>: ${specs}</label></div>`;
+      })
+      .join('\n');
+    }
+  })
+  .join('\n');
+  query.reports = [noBatchHTML, batchHTML].join('\n');
+};
 // Adds a credential field set to a query.
 const addYou = query => {
   const youLines = [
@@ -604,7 +636,7 @@ const requestHandler = (request, response) => {
                 }
                 else if (targetType === 'digest') {
                   pageName = 'createDigests';
-                  await addQueryTargets(query, 'report', 'reports', 'reportName');
+                  await addDigestables(query, true);
                 }
                 else if (['report', 'user'].includes(targetType)) {
                   pageName = 'createNamed';
