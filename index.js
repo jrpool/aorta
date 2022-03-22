@@ -204,7 +204,7 @@ const addQueryDigests = async (query, radioName) => {
   })
   .join('\n');
 };
-// Adds the script, batch, order, job, user, tester, or report HTML items to a query.
+// Adds the script, batch, order, job, user, tester, report, or digest HTML items to a query.
 const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
   const targets = await getTargets(targetType);
   // Add the target items as a parameter to the query.
@@ -220,7 +220,7 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
   })
   .join('\n');
 };
-// Adds the digestable HTML items to a query.
+// Adds the digestable report and host-report HTML items to a query.
 const addDigestables = async (query, isRadio) => {
   const reports = await getTargets('report');
   const noBatchReports = reports.filter(report => ! report.batchName);
@@ -609,7 +609,7 @@ const requestHandler = (request, response) => {
                 // Create a query.
                 query.targetType = targetType;
                 if (targetType === 'digest') {
-                  await addQueryDigests(query, 'targetName');
+                  await addQueryDigests(query, 'digestName');
                 }
                 else {
                   await addQueryTargets(query, targetType, 'targets', 'targetName');
