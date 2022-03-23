@@ -513,7 +513,7 @@ const requestHandler = (request, response) => {
               )) {
                 // Create a query.
                 query.targetType = targetType;
-                // If the target is a digest:
+                // If the target type is digest:
                 if (targetType === 'digest') {
                   // Add the digest HTML items to the query.
                   const digestFileNames = await fs.readdir(`${__dirname}/.data/digests`);
@@ -629,7 +629,8 @@ const requestHandler = (request, response) => {
           if (targetName) {
             // Get it and add the page parameters to the query.
             const dir = targetStrings[targetType][1];
-            query.target = await fs.readFile(`.data/${dir}/${targetName}.json`, 'utf8');
+            const extension = targetType === 'digest' ? 'html' : 'json';
+            query.target = await fs.readFile(`.data/${dir}/${targetName}.${extension}`, 'utf8');
             query.targetName = targetName;
             query.targetType = targetType;
             query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
