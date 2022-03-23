@@ -66,7 +66,7 @@ const render = async (nameBase, query, response) => {
 };
 // Serves a resource.
 const serveResource = async (fileName, contentType, encoding, response) => {
-  const readArgs = [fileName];
+  const readArgs = [`${__dirname}/${fileName}`];
   if (encoding) {
     readArgs.push(encoding);
   }
@@ -128,12 +128,6 @@ const targetSpecs = {
   order: target => orderSpecs(target),
   job: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
   report: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
-  /*
-  digestable: (target, index) => {
-    const hostPart = index ? `, host ${target.reports[index].id}` : '';
-    return `${orderSpecs(target)}${hostPart}, tester <strong>${target.tester}</strong>`;
-  },
-  */
   user: target => target.name,
   tester: target => target.name
 };
@@ -151,23 +145,6 @@ const apiErrorMessages = {
   noUserName: 'noUserName',
   role: 'role'
 };
-/*
-// Get an array of digests.
-const getDigests = async () => {
-  // For each digest:
-  const fileNames = await fs.readdir('.data/digests');
-  const digests = [];
-  for (const fileName of fileNames) {
-    // Get it.
-    const digest = await fs.readFile(`.data/digests/${fileName}`);
-    // If the digest is valid:
-    if (fileName.endsWith('.html')) {
-      digests.push(digest);
-    }
-  }
-  return digests;
-};
-*/
 // Get an array of ID-equipped scripts, batches, orders, jobs, users, testers, or reports.
 const getTargets = async targetType => {
   // For each target:
@@ -422,7 +399,7 @@ const requestHandler = (request, response) => {
         await render('index', query, response);
       }
       // Otherwise, if it is the style sheet:
-      else if (requestURL === '/aorta/style.css') {
+      else if (requestURL === '/aorta/../style.css') {
         // Serve it.
         await serveResource('style.css', 'text/css', 'utf8', response);
       }
