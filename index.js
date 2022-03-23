@@ -204,44 +204,6 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
   })
   .join('\n');
 };
-// Adds the digestable report and host-report HTML items to a query.
-const addDigestables = async (query, isRadio) => {
-  const reports = await getTargets('report');
-  const noBatchReports = reports.filter(report => ! report.batchName);
-  const batchReports = reports.filter(report => report.batchName);
-  // Add the no-batch reports as a parameter to the query.
-  noBatchHTML = noBatchReports.map(report => {
-    if (isRadio) {
-      const input = `<input type="radio" name="reportName" value="${report.id}" required>`;
-      const specs = targetSpecs.report(report);
-      return `<div><label>${input} <strong>${report.id}</strong>: ${specs}</label></div>`;
-    }
-    else {
-      return `<li><strong>${target.id}</strong>: ${targetSpecs[targetType](target)}</li>`;
-    }
-  })
-  .join('\n');
-  batchHTML = batchReports.map(report => {
-    const {reports} = report;
-    if (isRadio) {
-      return reports.map(hostReport => {
-        const input = `<input type="radio" name="reportName" value="${hostReport.id}" required>`;
-        const specs = targetSpecs.report(report);
-        return `<div><label>${input} <strong>${hostReport.id}</strong>: ${specs}</label></div>`;
-      })
-      .join('\n');
-    }
-    else {
-      return reports.map(hostReport => {
-        const specs = targetSpecs.report(hostReport);
-        return `<li><strong>${hostReport.id}</strong>: ${specs}</label></li>`;
-      })
-      .join('\n');
-    }
-  })
-  .join('\n');
-  query.reports = [noBatchHTML, batchHTML].join('\n');
-};
 // Adds a credential field set to a query.
 const addYou = query => {
   const youLines = [
@@ -636,7 +598,34 @@ const requestHandler = (request, response) => {
                 }
                 else if (targetType === 'digest') {
                   pageName = 'createDigests';
-                  await addDigestables(query, true);
+                  // Identify the digestable reports and host reports.
+                  const digesterFileNames = await fs.readdir(`${__dirname}/digesters`);
+                  const digesterNames = digesterFileNames
+                  .filter(fileName => fileName.endsWith('.js'))
+                  .map(fileName => fileName.slice(0, -3));
+                  const reports = await getTargets('report');
+                  const noBatchReports = reports
+                  .filter(report => ! report.batchName && digesterNames.includes(report.scriptName));
+                  const batchReports = reports
+                  .filter(report => report.batchName && digesterNames.includes(report.scriptName));
+                  // Add the no-batch reports as a parameter to the query.
+                  noBatchHTML = noBatchReports.map(report => {
+                    const input = `<input type="radio" name="reportName" value="${report.id}" required>`;
+                    const specs = targetSpecs.report(report);
+                    return `<div><label>${input} <strong>${report.id}</strong>: ${specs}</label></div>`;
+                  })
+                  .join('\n');
+                  batchHTML = batchReports.map(report => {
+                    const {reports} = report;
+                    return reports.map(hostReport => {
+                      const input = `<input type="radio" name="reportName" value="${hostReport.id}" required>`;
+                      const specs = targetSpecs.report(report);
+                      return `<div><label>${input} <strong>${hostReport.id}</strong>: ${specs}</label></div>`;
+                    })
+                    .join('\n');
+                  })
+                  .join('\n');
+                  query.reports = [noBatchHTML, batchHTML].join('\n');
                 }
                 else if (['report', 'user'].includes(targetType)) {
                   pageName = 'createNamed';
