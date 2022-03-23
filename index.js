@@ -743,7 +743,7 @@ const requestHandler = (request, response) => {
             const {scriptName} = report;
             const {parameters} = require(`${__dirname}/digesters/${scriptName}`);
             parameters(report, query);
-            const template = await fs.readFile(`${__dirname}/digesters/${scriptName}.html`);
+            const template = await fs.readFile(`${__dirname}/digesters/${scriptName}.html`, 'utf8');
             const digest = replaceHolders(template, query);
             await fs.writeFile(`.data/digests/${reportName}.json`, digest);
             // Serve an acknowledgement page.
