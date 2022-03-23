@@ -188,22 +188,6 @@ const getTargets = async targetType => {
   }
   return targets;
 };
-// Adds the digest HTML items to a query.
-const addQueryDigests = async (query, radioName) => {
-  const digests = await getDigests();
-  // Add the digest items as a parameter to the query.
-  query.digests = digests.map(digest => {
-    if (radioName) {
-      const input = `<input type="radio" name="${radioName}" value="${digest.id}" required>`;
-      const specs = targetSpecs.digest(digest);
-      return `<div><label>${input} <strong>${digest.id}</strong>: ${specs}</label></div>`;
-    }
-    else {
-      return `<li><strong>${digest.id}</strong>: ${targetSpecs.digest(digest)}</li>`;
-    }
-  })
-  .join('\n');
-};
 // Adds the script, batch, order, job, user, tester, report, or digest HTML items to a query.
 const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
   const targets = await getTargets(targetType);
@@ -608,8 +592,17 @@ const requestHandler = (request, response) => {
               )) {
                 // Create a query.
                 query.targetType = targetType;
+                // If the target is a digest:
                 if (targetType === 'digest') {
-                  await addQueryDigests(query, 'digestName');
+                  // Add the digest HTML items to the query.
+                  const digests = await getDigests();
+                  query.targets = digests.map(digest => {
+                    const input
+                      = `<input type="radio" name="digestName" value="${digest.id}" required>`;
+                    const specs = targetSpecs.digest(digest);
+                    return `<div><label>${input} <strong>${digest.id}</strong>: ${specs}</label></div>`;
+                  })
+                  .join('\n');
                 }
                 else {
                   await addQueryTargets(query, targetType, 'targets', 'targetName');
