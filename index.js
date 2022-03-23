@@ -806,7 +806,8 @@ const requestHandler = (request, response) => {
           // If the target was specified:
           if (targetName) {
             // Delete it.
-            await fs.rm(`.data/${targetStrings[targetType][1]}/${targetName}.json`);
+            const extension = targetType === 'digest' ? 'html' : 'json';
+            await fs.rm(`.data/${targetStrings[targetType][1]}/${targetName}.${extension}`);
             // Add the page parameters to the query.
             query.message = `You have successfully removed ${targetType} <strong>${targetName}</strong>.`;
             // Serve the response page.
