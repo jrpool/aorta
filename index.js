@@ -128,10 +128,12 @@ const targetSpecs = {
   order: target => orderSpecs(target),
   job: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
   report: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
-  digest: (target, index) => {
+  /*
+  digestable: (target, index) => {
     const hostPart = index ? `, host ${target.reports[index].id}` : '';
     return `${orderSpecs(target)}${hostPart}, tester <strong>${target.tester}</strong>`;
   },
+  */
   user: target => target.name,
   tester: target => target.name
 };
@@ -149,6 +151,7 @@ const apiErrorMessages = {
   noUserName: 'noUserName',
   role: 'role'
 };
+/*
 // Get an array of digests.
 const getDigests = async () => {
   // For each digest:
@@ -164,6 +167,7 @@ const getDigests = async () => {
   }
   return digests;
 };
+*/
 // Get an array of ID-equipped scripts, batches, orders, jobs, users, testers, or reports.
 const getTargets = async targetType => {
   // For each target:
@@ -535,12 +539,13 @@ const requestHandler = (request, response) => {
                 // If the target is a digest:
                 if (targetType === 'digest') {
                   // Add the digest HTML items to the query.
-                  const digests = await getDigests();
-                  query.targets = digests.map(digest => {
+                  const digestFileNames = await fs.readdir(`${__dirname}/.data/digests`);
+                  const digestNames = digestFileNames.map(fileName => fileName.slice(0, -5));
+                  query.targets = digestNames.map(digestName => {
                     const input
-                      = `<input type="radio" name="digestName" value="${digest.id}" required>`;
+                      = `<input type="radio" name="digestName" value="${digestName}" required>`;
                     const specs = targetSpecs.digest(digest);
-                    return `<div><label>${input} <strong>${digest.id}</strong>: ${specs}</label></div>`;
+                    return `<div><label>${input} <strong>${digestName}</strong></label></div>`;
                   })
                   .join('\n');
                 }
