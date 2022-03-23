@@ -44,7 +44,7 @@ exports.parameters = (report, query) => {
   query.dateISO = report.endTime.slice(0, 10);
   query.dateSlash = query.dateISO.replace(/-/g, '/');
   query.reportID = report.id;
-  query.scoreProc = __filename.slice(0, -3);
+  query.scoreProc = __filename.slice(0, -3).replace(/^.+\//, '');
   query.org = report.host.what;
   query.url = report.host.which;
   const scoreAct = report.acts.filter(act => act.type === 'score')[0];
