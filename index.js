@@ -399,7 +399,7 @@ const requestHandler = (request, response) => {
         await render('index', query, response);
       }
       // Otherwise, if it is the style sheet:
-      else if (requestURL === '/aorta/../style.css') {
+      else if (requestURL === '/aorta/style.css') {
         // Serve it.
         await serveResource('style.css', 'text/css', 'utf8', response);
       }
