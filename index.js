@@ -543,7 +543,7 @@ const requestHandler = (request, response) => {
                   const digestNames = digestFileNames.map(fileName => fileName.slice(0, -5));
                   query.targets = digestNames.map(digestName => {
                     const input
-                      = `<input type="radio" name="digestName" value="${digestName}" required>`;
+                      = `<input type="radio" name="targetName" value="${digestName}" required>`;
                     return `<div><label>${input} <strong>${digestName}</strong></label></div>`;
                   })
                   .join('\n');
