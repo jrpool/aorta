@@ -631,7 +631,7 @@ const requestHandler = (request, response) => {
             const dir = targetStrings[targetType][1];
             const extension = targetType === 'digest' ? 'html' : 'json';
             if (targetType === 'digest') {
-              await render(`.data/digests/${targetName}.html`, {}, response);
+              await render(`.data/digests/${targetName}`, {}, response);
             }
             else {
               query.target = await fs.readFile(`.data/${dir}/${targetName}.${extension}`, 'utf8');
