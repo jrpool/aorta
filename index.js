@@ -168,7 +168,7 @@ const getTargets = async targetType => {
   }
   return targets;
 };
-// Adds the script, batch, order, job, user, tester, report, or digest HTML items to a query.
+// Adds the script, batch, order, job, user, tester, or report HTML items to a query.
 const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
   const targets = await getTargets(targetType);
   // Add the target items as a parameter to the query.
@@ -181,6 +181,17 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
     else {
       return `<li><strong>${target.id}</strong>: ${targetSpecs[targetType](target)}</li>`;
     }
+  })
+  .join('\n');
+};
+// Adds the digest HTML items to a query.
+const addQueryDigests = async query => {
+  const digestFileNames = await fs.readdir(`${__dirname}/.data/digests`);
+  const digestNames = digestFileNames.map(fileName => fileName.slice(0, -5));
+  query.targets = digestNames.map(digestName => {
+    const input
+      = `<input type="radio" name="targetName" value="${digestName}" required>`;
+    return `<div><label>${input} <strong>${digestName}</strong></label></div>`;
   })
   .join('\n');
 };
@@ -516,14 +527,7 @@ const requestHandler = (request, response) => {
                 // If the target type is digest:
                 if (targetType === 'digest') {
                   // Add the digest HTML items to the query.
-                  const digestFileNames = await fs.readdir(`${__dirname}/.data/digests`);
-                  const digestNames = digestFileNames.map(fileName => fileName.slice(0, -5));
-                  query.targets = digestNames.map(digestName => {
-                    const input
-                      = `<input type="radio" name="targetName" value="${digestName}" required>`;
-                    return `<div><label>${input} <strong>${digestName}</strong></label></div>`;
-                  })
-                  .join('\n');
+                  await addQueryDigests(query);
                 }
                 else {
                   await addQueryTargets(query, targetType, 'targets', 'targetName');
@@ -603,7 +607,12 @@ const requestHandler = (request, response) => {
               )) {
                 // Create a query.
                 query.targetType = targetType;
-                await addQueryTargets(query, targetType, 'targets', 'targetName');
+                if (targetType === 'digest') {
+                  await addQueryDigests(query);
+                }
+                else {
+                  await addQueryTargets(query, targetType, 'targets', 'targetName');
+                }
                 addYou(query);
                 // Serve the target-choice page.
                 await render('removeTargets', query, response);
@@ -776,7 +785,7 @@ const requestHandler = (request, response) => {
                   // If the target is a report:
                   if (targetType === 'report') {
                     // Delete any existing digest of a prior version of the same report.
-                    await fs.rm(`.data/digests/${targetName}.json`, {force: true});
+                    await fs.rm(`.data/digests/${targetName}.html`, {force: true});
                   }
                   // Serve an acknowledgement page.
                   query.message = `Successfully created ${targetType} <strong>${targetName}</strong>.`;
