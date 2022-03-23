@@ -630,12 +630,17 @@ const requestHandler = (request, response) => {
             // Get it and add the page parameters to the query.
             const dir = targetStrings[targetType][1];
             const extension = targetType === 'digest' ? 'html' : 'json';
-            query.target = await fs.readFile(`.data/${dir}/${targetName}.${extension}`, 'utf8');
-            query.targetName = targetName;
-            query.targetType = targetType;
-            query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
-            // Serve the response page.
-            await render('seeTarget', query, response);
+            if (targetType === 'digest') {
+              await render(`.data/digests/${targetName}.html`, {}, response);
+            }
+            else {
+              query.target = await fs.readFile(`.data/${dir}/${targetName}.${extension}`, 'utf8');
+              query.targetName = targetName;
+              query.targetType = targetType;
+              query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
+              // Serve the response page.
+              await render('seeTarget', query, response);
+            }
           }
           else {
             err(`No ${targetType} selected`, `retrieving ${targetType}`, response);
