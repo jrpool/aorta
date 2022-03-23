@@ -34,6 +34,9 @@ fieldset {
   width: max-content;
   margin-top: 1rem;
 }
+.firstCellRight td:nth-child(1) {
+  text-align: right;
+}
 form {
   margin-top: 1rem;
 }
@@ -48,6 +51,28 @@ input {
 legend {
   font-weight: 700;
 }
+.secondCellRight td:nth-child(2) {
+  text-align: right;
+}
 section:not(.wide) {
   max-width: 36rem;
+}
+table {
+  border-collapse: collapse;
+}
+table.allBorder th {
+  padding-bottom: 0;
+}
+table.allBorder th, table.allBorder td, tbody td {
+  border: 1px gray solid;
+}
+tbody th {
+  padding-right: 1rem;
+  text-align: right;
+}
+td, th {
+  padding: 0 0.5rem;
+}
+thead th {
+  padding-bottom: 1rem;
 }
