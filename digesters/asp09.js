@@ -15,7 +15,7 @@ exports.parameters = (report, query) => {
   const packageSucceedText = package =>
     `<p>The page <strong>passed</strong> the <code>${package}</code> test.</p>`;
   const packageFailText = (score, package, failures) =>
-    `<p>The page <strong>did not pass</strong> the <code>${package}</code> test and received a score of ${score} on <code>${package}</code>. The details are in the <a href="../jsonReports/${fn}">JSON-format file</a>, in the section starting with <code>"which": "${package}"</code>. There was at least one failure of:</p>${joiner}<ul>${innerJoiner}${failures}${joiner}</ul>`;
+    `<p>The page <strong>did not pass</strong> the <code>${package}</code> test and received a score of ${score} on <code>${package}</code>. The details are in the ${report.orderName || report.id} report, in the section starting with <code>"which": "${package}"</code>. There was at least one failure of:</p>${joiner}<ul>${innerJoiner}${failures}${joiner}</ul>`;
   // Creates messages about results of custom tests.
   const customSucceedText =
     test => `<p>The page <strong>passed</strong> the <code>${test}</code> test.</p>`;
