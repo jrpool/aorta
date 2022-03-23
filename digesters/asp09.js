@@ -31,7 +31,15 @@ exports.parameters = (report, query) => {
   const customResult = (score, test, failures) =>
     `${customFailText(score, test)}${joiner}${customFailMore(failures)}`;
   // Returns the act of a test.
-  const actOf = testName => report.acts.filter(act => act.type === 'test' && act.which === testName);
+  const actOf = testName => {
+    const matches = report.acts.filter(act => act.type === 'test' && act.which === testName);
+    if (matches.length) {
+      return matches[0];
+    }
+    else {
+      return null;
+    }
+  };
   // Get general data.
   query.dateISO = report.endTime.slice(0, 10);
   query.dateSlash = query.dateISO.replace(/-/g, '/');

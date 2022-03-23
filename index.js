@@ -321,27 +321,6 @@ const writeOrder = async (userName, options, response) => {
     'ack', {message: `Successfully created order <strong>${id}</strong>.`}, response
   );
 };
-// Writes a digest and serves an acknowledgement page.
-const writeDigest = async (reportName) => {
-  const hasBatch = reportName.index > -1;
-  const fileNameBase = hasBatch ? reportName.replace(/-.+$/, '') : reportName;
-  const fileJSON = await fs.readFile(`.data/reports/${fileNameBase}.json`, 'utf8');
-  const fileObj = JSON.parse(fileJSON);
-  const report = hasBatch
-  ? fileObj.reports.filter(hostReport => reportName.endsWith(hostReport.id))[0]
-  : fileObj;
-  const query = {};
-  const {scriptName} = report;
-  const {parameters} = require(`${__dirname}/digesters/${scriptName}`);
-  parameters(report, query);
-  const template = await fs.readFile(`.data/digesters/${scriptName}.html`);
-  const digest = replaceHolders(template, query);
-  await fs.writeFile(`.data/digests/${reportName}.json`, digest);
-  // Serve an acknowledgement page.
-  await render(
-    'ack', {message: `Successfully created digest <strong>${reportName}</strong>.`}, response
-  );
-};
 // Validates a job and returns success or a reason for failure.
 const jobOK = async (fileNameBase, testerName) => {
   const orderFileNames = await fs.readdir('.data/orders');
@@ -751,7 +730,20 @@ const requestHandler = (request, response) => {
           // If a report was specified:
           if (reportName) {
             // Create the digest.
-            await writeDigest(reportName);
+            const hasBatch = reportName.includes('-');
+            const fileNameBase = hasBatch ? reportName.replace(/-.+$/, '') : reportName;
+            const fileJSON = await fs.readFile(`${__dirname}/.data/reports/${fileNameBase}.json`, 'utf8');
+            const fileObj = JSON.parse(fileJSON);
+            const report = hasBatch
+            ? fileObj.reports.filter(hostReport => reportName.endsWith(hostReport.id))[0]
+            : fileObj;
+            const query = {};
+            const {scriptName} = report;
+            const {parameters} = require(`${__dirname}/digesters/${scriptName}`);
+            parameters(report, query);
+            const template = await fs.readFile(`.data/digesters/${scriptName}.html`);
+            const digest = replaceHolders(template, query);
+            await fs.writeFile(`.data/digests/${reportName}.json`, digest);
             // Serve an acknowledgement page.
             await render(
               'ack',
