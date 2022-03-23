@@ -544,7 +544,6 @@ const requestHandler = (request, response) => {
                   query.targets = digestNames.map(digestName => {
                     const input
                       = `<input type="radio" name="digestName" value="${digestName}" required>`;
-                    const specs = targetSpecs.digest(digest);
                     return `<div><label>${input} <strong>${digestName}</strong></label></div>`;
                   })
                   .join('\n');
