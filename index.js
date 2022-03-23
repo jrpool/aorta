@@ -732,7 +732,9 @@ const requestHandler = (request, response) => {
             // Create the digest.
             const hasBatch = reportName.includes('-');
             const fileNameBase = hasBatch ? reportName.replace(/-.+$/, '') : reportName;
-            const fileJSON = await fs.readFile(`${__dirname}/.data/reports/${fileNameBase}.json`, 'utf8');
+            const fileJSON = await fs.readFile(
+              `${__dirname}/.data/reports/${fileNameBase}.json`, 'utf8'
+            );
             const fileObj = JSON.parse(fileJSON);
             const report = hasBatch
             ? fileObj.reports.filter(hostReport => reportName.endsWith(hostReport.id))[0]
@@ -741,7 +743,7 @@ const requestHandler = (request, response) => {
             const {scriptName} = report;
             const {parameters} = require(`${__dirname}/digesters/${scriptName}`);
             parameters(report, query);
-            const template = await fs.readFile(`.data/digesters/${scriptName}.html`);
+            const template = await fs.readFile(`${__dirname}/digesters/${scriptName}.html`);
             const digest = replaceHolders(template, query);
             await fs.writeFile(`.data/digests/${reportName}.json`, digest);
             // Serve an acknowledgement page.
