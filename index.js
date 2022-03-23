@@ -156,8 +156,7 @@ const getDigests = async () => {
   const digests = [];
   for (const fileName of fileNames) {
     // Get it.
-    const digestJSON = await fs.readFile(`.data/digests/${fileName}`);
-    const digest = JSON.parse(digestJSON);
+    const digest = await fs.readFile(`.data/digests/${fileName}`);
     // If the digest is valid:
     if (fileName.endsWith('.html')) {
       digests.push(digest);
