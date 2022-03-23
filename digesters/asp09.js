@@ -253,7 +253,7 @@ exports.parameters = (report, query) => {
     query.linkUlResult = customSucceedText('linkUl');
   }
   if (scores.log) {
-    const {logCount, logSize, visitRejectionCount, prohibitedCount, visitTimeoutCount} = sourceData;
+    const {logCount, logSize, visitRejectionCount, prohibitedCount, visitTimeoutCount} = report;
     const logData = {logCount, logSize, visitRejectionCount, prohibitedCount, visitTimeoutCount};
     const failures = customFailures(logData);
     query.logResult = customResult(scores.log, 'log', failures);
