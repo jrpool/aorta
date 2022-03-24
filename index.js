@@ -619,6 +619,16 @@ const requestHandler = (request, response) => {
                 }
                 else if (['script', 'batch'].includes(targetType)) {
                   pageName = 'createUnnamed';
+                  if (targetType === 'script') {
+                    query.initValue = await fs.readFile(
+                      `${__dirname}/sampleData/scripts/bulk.json`, 'utf8'
+                    );
+                  }
+                  else if (targetType === 'batch') {
+                    query.initValue = await fs.readFile(
+                      `${__dirname}/sampleData/batches/weborgs.json`
+                    );
+                  }
                 }
                 await render(pageName, query, response);
               }

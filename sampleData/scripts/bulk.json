@@ -1,5 +1,5 @@
 {
-  "what": "Sample script with 1 test",
+  "what": "Minimal script with the bulk test",
   "strict": true,
   "commands": [
     {

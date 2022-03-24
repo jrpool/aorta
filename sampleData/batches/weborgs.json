@@ -1,15 +1,18 @@
 {
-  "what": "Sample batch with 3 hosts",
+  "what": "Web organizations",
   "hosts": [
     {
+      "id": "w3c",
       "which": "https://www.w3.org/",
       "what": "W3C"
     },
     {
+      "id": "wikimedia",
       "which": "https://www.wikimedia.org/",
       "what": "Wikimedia"
     },
     {
+      "id": "mozilla",
       "which": "https://www.mozilla.org/en-US/",
       "what": "Mozilla"
     }
