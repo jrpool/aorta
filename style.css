@@ -26,6 +26,10 @@ caption {
   font-weight: bold;
   font-style: italic;
 }
+code {
+  font-family: sans-serif;
+  color: #832703;
+}
 .error {
   font-weight: 700;
   color: #c00;

@@ -11,16 +11,19 @@ exports.parameters = (report, query) => {
   // Newlines with indentations.
   const joiner = '\n      ';
   const innerJoiner = '\n        ';
+  const {acts, host, hostName, id, orderName} = report;
+  const reportHostInfo = hostName ? `the <code>${hostName}</code> host report in ` : '';
+  const reportInfo = `${reportHostInfo}the <code>${orderName || id}</code> report`;
   // Creates messages about results of packaged tests.
   const packageSucceedText = package =>
     `<p>The page <strong>passed</strong> the <code>${package}</code> test.</p>`;
   const packageFailText = (score, package, failures) =>
-    `<p>The page <strong>did not pass</strong> the <code>${package}</code> test and received a score of ${score} on <code>${package}</code>. The details are in the <code>${report.orderName || report.id}</code> report, in the section starting with <code>"which": "${package}"</code>. There was at least one failure of:</p>${joiner}<ul>${innerJoiner}${failures}${joiner}</ul>`;
+    `<p>The page <strong>did not pass</strong> the <code>${package}</code> test and received a score of ${score} on <code>${package}</code>. The details are in ${reportInfo}, in the section starting with <code>"which": "${package}"</code>. There was at least one failure of:</p>${joiner}<ul>${innerJoiner}${failures}${joiner}</ul>`;
   // Creates messages about results of custom tests.
   const customSucceedText =
     test => `<p>The page <strong>passed</strong> the <code>${test}</code> test.</p>`;
   const customFailText = (score, test) =>
-    `<p>The page <strong>did not pass</strong> the <code>${test}</code> test and received a score of ${score} on <code>${test}</code>. The details are in the <code>${report.orderName || report.id}</code> report, in the section starting with <code>"which": "${test}"</code>.</p>`;
+    `<p>The page <strong>did not pass</strong> the <code>${test}</code> test and received a score of ${score} on <code>${test}</code>. The details are in ${reportInfo}, in the section starting with <code>"which": "${test}"</code>.</p>`;
   const testCrashText = (score, test) => `<p>The <code>${test}</code> test could not be performed. The page received an inferred score of ${score} on <code>${test}</code>.</p>`;
   const customFailures = failObj => Object
   .entries(failObj)
@@ -43,11 +46,11 @@ exports.parameters = (report, query) => {
   // Get general data.
   query.dateISO = report.endTime.slice(0, 10);
   query.dateSlash = query.dateISO.replace(/-/g, '/');
-  query.reportID = report.id;
+  query.reportInfo = reportInfo;
   query.scoreProc = __filename.slice(0, -3).replace(/^.+\//, '');
-  query.org = report.host.what;
-  query.url = report.host.which;
-  const scoreAct = report.acts.filter(act => act.type === 'score')[0];
+  query.org = host.what;
+  query.url = host.which;
+  const scoreAct = acts.filter(act => act.type === 'score')[0];
   const {result} = scoreAct;
   const {inferences, scores} = result;
   query.totalScore = scores.total;
