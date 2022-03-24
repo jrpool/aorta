@@ -1,7 +1,7 @@
 {
-  "id": "userX",
+  "id": "userx",
   "name": "John Doe",
   "email": "doe@example.org",
-  "authCode": "abcdef",
+  "authCode": "abc12def",
   "roles": ["manage", "order", "assign", "test", "read"]
 }

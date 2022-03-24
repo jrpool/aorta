@@ -210,42 +210,50 @@ const addYou = query => {
 };
 // Returns whether a user exists and has a role, or why not.
 const userOK = async (userName, authCode, role) => {
-  // If a user name was specified:
-  if (userName) {
-    // If it is an existing user name:
-    const userFileNames = await fs.readdir('.data/users');
-    const userIndex = userFileNames.findIndex(fileName => fileName === `${userName}.json`);
-    if (userIndex > -1) {
-      // Get data on the user.
-      const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
-      const user = JSON.parse(userJSON);
-      // If an authorization code was specified:
-      if (authCode) {
-        // If it is correct:
-        if (authCode === user.authCode) {
-          // If no role is required or the user has the specified role:
-          if (! role || user.roles.includes(role)) {
-            // Return success.
-            return [];
+  const userFileNames = await fs.readdir('.data/users');
+  // If any users exist:
+  if (userFileNames.length) {
+    // If a user name was specified:
+    if (userName) {
+      // If it is an existing user name:
+      const userIndex = userFileNames.findIndex(fileName => fileName === `${userName}.json`);
+      if (userIndex > -1) {
+        // Get data on the user.
+        const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
+        const user = JSON.parse(userJSON);
+        // If an authorization code was specified:
+        if (authCode) {
+          // If it is correct:
+          if (authCode === user.authCode) {
+            // If no role is required or the user has the specified role:
+            if (! role || user.roles.includes(role)) {
+              // Return success.
+              return [];
+            }
+            else {
+              return ['role', role];
+            }
           }
           else {
-            return ['role', role];
+            return ['badAuthCode'];
           }
         }
-        else {
-          return ['badAuthCode'];
+        else{
+          return ['noAuthCode'];
         }
       }
-      else{
-        return ['noAuthCode'];
+      else {
+        return ['badUserName'];
       }
     }
     else {
-      return ['badUserName'];
+      return ['noUserName'];
     }
   }
+  // Otherwise, i.e. if no users exist yet:
   else {
-    return ['noUserName'];
+    // Return success.
+    return [];
   }
 };
 // Validates a web user, serves an error page if invalid, and returns the result.
@@ -598,6 +606,16 @@ const requestHandler = (request, response) => {
                 }
                 else if (['report', 'user'].includes(targetType)) {
                   pageName = 'createNamed';
+                  // If a user is to be created:
+                  if (targetType === 'user') {
+                    // Add an initial value to the query.
+                    query.initValue = await fs.readFile(
+                      `${__dirname}/sampleData/users/userx.json`, 'utf8'
+                    );
+                  }
+                  else {
+                    query.initValue = '';
+                  }
                 }
                 else if (['script', 'batch'].includes(targetType)) {
                   pageName = 'createUnnamed';

@@ -10,6 +10,3 @@ node_modules/
 
 # Secrets
 .env.js
-
-# Transactions
-.data/
