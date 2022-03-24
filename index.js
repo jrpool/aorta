@@ -17,7 +17,7 @@ try {
 }
 catch(error) {};
 // Module to create a web server.
-const protocolName = process.env.PROTOCOL || 'http2';
+const protocolName = process.env.PROTOCOL || 'http';
 const protocolServer = require(protocolName);
 // Module to parse request bodies.
 const {parse} = require('querystring');
