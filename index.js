@@ -385,6 +385,12 @@ const getOrderPart = async (fileNameBase, partDir) => {
     return {error}
   }
 };
+// Escapes reserved characters for <pre>.
+const entify = content => content
+.replace(/&/g, '&amp;')
+.replace(/</g, '&lt;')
+.replace(/>/g, '&gt;')
+.replace(/"/g, '&quot');
 // Handles requests.
 const requestHandler = (request, response) => {
   const {method} = request;
@@ -643,7 +649,10 @@ const requestHandler = (request, response) => {
               await render(`.data/digests/${targetName}`, {}, response);
             }
             else {
-              query.target = await fs.readFile(`.data/${dir}/${targetName}.${extension}`, 'utf8');
+              const targetText = await fs.readFile(
+                `.data/${dir}/${targetName}.${extension}`, 'utf8'
+              );
+              query.target = extension === 'html' ? targetText : entify(targetText);
               query.targetName = targetName;
               query.targetType = targetType;
               query.TargetType = `${targetType[0].toUpperCase()}${targetType.slice(1)}`;
