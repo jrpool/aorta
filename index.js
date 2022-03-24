@@ -57,7 +57,7 @@ const replaceHolders = (content, query) => content
 const render = async (nameBase, query, response) => {
   if (! response.writableEnded) {
     // Get the page.
-    const page = await fs.readFile(`./${nameBase}.html`, 'utf8');
+    const page = await fs.readFile(`${nameBase}.html`, 'utf8');
     // Replace its placeholders with eponymous query parameters.
     const renderedPage = replaceHolders(page, query);
     // Serve the page.
@@ -66,7 +66,7 @@ const render = async (nameBase, query, response) => {
 };
 // Serves a resource.
 const serveResource = async (fileName, contentType, encoding, response) => {
-  const readArgs = [`${__dirname}/${fileName}`];
+  const readArgs = [fileName];
   if (encoding) {
     readArgs.push(encoding);
   }
@@ -153,6 +153,7 @@ const getTargets = async targetType => {
   const targets = [];
   for (const fileName of fileNames) {
     // Get it.
+    await fs.mkdir(`.data/${dir}`, {recursive: true});
     const targetJSON = await fs.readFile(`.data/${dir}/${fileName}`);
     const target = JSON.parse(targetJSON);
     // If the target is valid:
@@ -186,7 +187,8 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
 };
 // Adds the digest HTML items to a query.
 const addQueryDigests = async query => {
-  const digestFileNames = await fs.readdir(`${__dirname}/.data/digests`);
+  await fs.mkdir('.data/digests', {recursive: true});
+  const digestFileNames = await fs.readdir(`.data/digests`);
   const digestNames = digestFileNames.map(fileName => fileName.slice(0, -5));
   query.targets = digestNames.map(digestName => {
     const input
@@ -219,6 +221,7 @@ const userOK = async (userName, authCode, role) => {
       const userIndex = userFileNames.findIndex(fileName => fileName === `${userName}.json`);
       if (userIndex > -1) {
         // Get data on the user.
+        await fs.mkdir('.data/users', {recursive: true});
         const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
         const user = JSON.parse(userJSON);
         // If an authorization code was specified:
@@ -314,6 +317,7 @@ const writeOrder = async (userName, options, response) => {
   if (batch) {
     data.batch = batch;
   }
+  await fs.mkdir('.data/orders', {recursive: true});
   await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
   // Serve an acknowledgement page.
   await render(
@@ -328,6 +332,7 @@ const jobOK = async (fileNameBase, testerName) => {
     const userFileNames = await fs.readdir('.data/users');
     const userExists = userFileNames.some(fileName => fileName === `${testerName}.json`);
     if (userExists) {
+      await fs.mkdir('.data/users', {recursive: true});
       const userJSON = await fs.readFile(`.data/users/${testerName}.json`, 'utf8');
       const user = JSON.parse(userJSON);
       return user.roles.includes('test') ? '' : 'nonTester';
@@ -368,6 +373,7 @@ const reportOK = async (reportJSON, userName) => {
 // Assigns an order to a tester, creating a job.
 const writeJob = async (assignedBy, fileNameBase, testerName) => {
   // Get the order.
+  await fs.mkdir('.data/orders', {recursive: true});
   const orderJSON = await fs.readFile(`.data/orders/${fileNameBase}.json`, 'utf8');
   const order = JSON.parse(orderJSON);
   // Add assignment facts to it.
@@ -378,6 +384,7 @@ const writeJob = async (assignedBy, fileNameBase, testerName) => {
   order.log = [];
   order.reports = [];
   // Write it as a job, to be used as a Testaro options object in handleRequest().
+  await fs.mkdir('.data/jobs', {recursive: true});
   await fs.writeFile(`.data/jobs/${fileNameBase}.json`, JSON.stringify(order, null, 2));
   // Delete it as an order.
   await fs.rm(`.data/orders/${fileNameBase}.json`);
@@ -385,6 +392,7 @@ const writeJob = async (assignedBy, fileNameBase, testerName) => {
 // Gets the content of a script or batch.
 const getOrderPart = async (fileNameBase, partDir) => {
   try {
+    await fs.mkdir(`.data/${partDir}`, {recursive: true});
     const partJSON = await fs.readFile(`.data/${partDir}/${fileNameBase}.json`, 'utf8');
     const content = JSON.parse(partJSON);
     return content;
@@ -510,6 +518,7 @@ const requestHandler = (request, response) => {
             }
             else {
               // Create the report.
+              await fs.mkdir('.data/reports', {recursive: true});
               await fs.writeFile(
                 `.data/reports/${reportStatus[1]}.json`, JSON.stringify(report, null, 2)
               );
@@ -610,7 +619,7 @@ const requestHandler = (request, response) => {
                   if (targetType === 'user') {
                     // Add an initial value to the query.
                     query.initValue = await fs.readFile(
-                      `${__dirname}/sampleData/users/userx.json`, 'utf8'
+                      `sampleData/users/userx.json`, 'utf8'
                     );
                   }
                   else {
@@ -621,12 +630,12 @@ const requestHandler = (request, response) => {
                   pageName = 'createUnnamed';
                   if (targetType === 'script') {
                     query.initValue = await fs.readFile(
-                      `${__dirname}/sampleData/scripts/bulk.json`, 'utf8'
+                      `sampleData/scripts/bulk.json`, 'utf8'
                     );
                   }
                   else if (targetType === 'batch') {
                     query.initValue = await fs.readFile(
-                      `${__dirname}/sampleData/batches/weborgs.json`
+                      `sampleData/batches/weborgs.json`
                     );
                   }
                 }
@@ -677,6 +686,7 @@ const requestHandler = (request, response) => {
               await render(`.data/digests/${targetName}`, {}, response);
             }
             else {
+              await fs.mkdir(`.data/${dir}`, {recursive: true});
               const targetText = await fs.readFile(
                 `.data/${dir}/${targetName}.${extension}`, 'utf8'
               );
@@ -764,8 +774,9 @@ const requestHandler = (request, response) => {
             // Create the digest.
             const hasBatch = reportName.includes('-');
             const fileNameBase = hasBatch ? reportName.replace(/-.+$/, '') : reportName;
+            await fs.mkdir('.data/reports', {recursive: true});
             const fileJSON = await fs.readFile(
-              `${__dirname}/.data/reports/${fileNameBase}.json`, 'utf8'
+              `.data/reports/${fileNameBase}.json`, 'utf8'
             );
             const fileObj = JSON.parse(fileJSON);
             const report = hasBatch
@@ -775,8 +786,9 @@ const requestHandler = (request, response) => {
             const {scriptName} = report;
             const {parameters} = require(`${__dirname}/digesters/${scriptName}`);
             parameters(report, query);
-            const template = await fs.readFile(`${__dirname}/digesters/${scriptName}.html`, 'utf8');
+            const template = await fs.readFile(`digesters/${scriptName}.html`, 'utf8');
             const digest = replaceHolders(template, query);
+            await fs.mkdir('.data/digests', {recursive: true});
             await fs.writeFile(`${__dirname}/.data/digests/${reportName}.html`, digest);
             // Serve an acknowledgement page.
             await render(
@@ -818,6 +830,7 @@ const requestHandler = (request, response) => {
                 }
                 else {
                   // Create the target.
+                  await fs.mkdir(`.data/${dir}`, {recursive: true});
                   await fs.writeFile(`.data/${dir}/${targetName}.json`, target);
                   // If the target is a report:
                   if (targetType === 'report') {
