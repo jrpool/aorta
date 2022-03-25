@@ -151,11 +151,11 @@ const apiErrorMessages = {
 const getTargets = async targetType => {
   // For each target:
   const dir = targetStrings[targetType][1];
-  const fileNames = await fs.readdir(`.data/${dir}`);
+  const fileNames = await fs.readdir(`data/${dir}`);
   const targets = [];
   for (const fileName of fileNames) {
     // Get it.
-    const targetJSON = await fs.readFile(`.data/${dir}/${fileName}`);
+    const targetJSON = await fs.readFile(`data/${dir}/${fileName}`);
     const target = JSON.parse(targetJSON);
     // If the target is valid:
     if (targetType !== 'tester' || target.roles.includes('test')) {
@@ -188,7 +188,7 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
 };
 // Adds the digest HTML items to a query.
 const addQueryDigests = async query => {
-  const digestFileNames = await fs.readdir(`.data/digests`);
+  const digestFileNames = await fs.readdir(`data/digests`);
   const digestNames = digestFileNames.map(fileName => fileName.slice(0, -5));
   query.targets = digestNames.map(digestName => {
     const input
@@ -212,7 +212,7 @@ const addYou = query => {
 };
 // Returns whether a user exists and has a role, or why not.
 const userOK = async (userName, authCode, role) => {
-  const userFileNames = await fs.readdir('.data/users');
+  const userFileNames = await fs.readdir('data/users');
   // If any users exist:
   if (userFileNames.length) {
     // If a user name was specified:
@@ -221,7 +221,7 @@ const userOK = async (userName, authCode, role) => {
       const userIndex = userFileNames.findIndex(fileName => fileName === `${userName}.json`);
       if (userIndex > -1) {
         // Get data on the user.
-        const userJSON = await fs.readFile(`.data/users/${userFileNames[userIndex]}`, 'utf8');
+        const userJSON = await fs.readFile(`data/users/${userFileNames[userIndex]}`, 'utf8');
         const user = JSON.parse(userJSON);
         // If an authorization code was specified:
         if (authCode) {
@@ -316,7 +316,7 @@ const writeOrder = async (userName, options, response) => {
   if (batch) {
     data.batch = batch;
   }
-  await fs.writeFile(`.data/orders/${id}.json`, JSON.stringify(data, null, 2));
+  await fs.writeFile(`data/orders/${id}.json`, JSON.stringify(data, null, 2));
   // Serve an acknowledgement page.
   await render(
     'ack', {message: `Successfully created order <strong>${id}</strong>.`}, response
@@ -324,13 +324,13 @@ const writeOrder = async (userName, options, response) => {
 };
 // Validates a job and returns success or a reason for failure.
 const jobOK = async (fileNameBase, testerName) => {
-  const orderFileNames = await fs.readdir('.data/orders');
+  const orderFileNames = await fs.readdir('data/orders');
   const orderExists = orderFileNames.some(fileName => fileName === `${fileNameBase}.json`);
   if (orderExists) {
-    const userFileNames = await fs.readdir('.data/users');
+    const userFileNames = await fs.readdir('data/users');
     const userExists = userFileNames.some(fileName => fileName === `${testerName}.json`);
     if (userExists) {
-      const userJSON = await fs.readFile(`.data/users/${testerName}.json`, 'utf8');
+      const userJSON = await fs.readFile(`data/users/${testerName}.json`, 'utf8');
       const user = JSON.parse(userJSON);
       return user.roles.includes('test') ? '' : 'nonTester';
     }
@@ -370,7 +370,7 @@ const reportOK = async (reportJSON, userName) => {
 // Assigns an order to a tester, creating a job.
 const writeJob = async (assignedBy, fileNameBase, testerName) => {
   // Get the order.
-  const orderJSON = await fs.readFile(`.data/orders/${fileNameBase}.json`, 'utf8');
+  const orderJSON = await fs.readFile(`data/orders/${fileNameBase}.json`, 'utf8');
   const order = JSON.parse(orderJSON);
   // Add assignment facts to it.
   order.assignedBy = assignedBy;
@@ -380,14 +380,14 @@ const writeJob = async (assignedBy, fileNameBase, testerName) => {
   order.log = [];
   order.reports = [];
   // Write it as a job, to be used as a Testaro options object in handleRequest().
-  await fs.writeFile(`.data/jobs/${fileNameBase}.json`, JSON.stringify(order, null, 2));
+  await fs.writeFile(`data/jobs/${fileNameBase}.json`, JSON.stringify(order, null, 2));
   // Delete it as an order.
-  await fs.rm(`.data/orders/${fileNameBase}.json`);
+  await fs.rm(`data/orders/${fileNameBase}.json`);
 };
 // Gets the content of a script or batch.
 const getOrderPart = async (fileNameBase, partDir) => {
   try {
-    const partJSON = await fs.readFile(`.data/${partDir}/${fileNameBase}.json`, 'utf8');
+    const partJSON = await fs.readFile(`data/${partDir}/${fileNameBase}.json`, 'utf8');
     const content = JSON.parse(partJSON);
     return content;
   }
@@ -513,10 +513,10 @@ const requestHandler = (request, response) => {
             else {
               // Create the report.
               await fs.writeFile(
-                `.data/reports/${reportStatus[1]}.json`, JSON.stringify(report, null, 2)
+                `data/reports/${reportStatus[1]}.json`, JSON.stringify(report, null, 2)
               );
               // Delete the job.
-              await fs.rm(`.data/jobs/${reportStatus[1]}.json`);
+              await fs.rm(`data/jobs/${reportStatus[1]}.json`);
               // Send an acknowledgement.
               await sendAPI({success: 'reportCreated'}, response);
             }
@@ -674,11 +674,11 @@ const requestHandler = (request, response) => {
             const dir = targetStrings[targetType][1];
             const extension = targetType === 'digest' ? 'html' : 'json';
             if (targetType === 'digest') {
-              await render(`.data/digests/${targetName}`, {}, response);
+              await render(`data/digests/${targetName}`, {}, response);
             }
             else {
               const targetText = await fs.readFile(
-                `.data/${dir}/${targetName}.${extension}`, 'utf8'
+                `data/${dir}/${targetName}.${extension}`, 'utf8'
               );
               query.target = extension === 'html' ? targetText : entify(targetText);
               query.targetName = targetName;
@@ -765,7 +765,7 @@ const requestHandler = (request, response) => {
             const hasBatch = reportName.includes('-');
             const fileNameBase = hasBatch ? reportName.replace(/-.+$/, '') : reportName;
             const fileJSON = await fs.readFile(
-              `.data/reports/${fileNameBase}.json`, 'utf8'
+              `data/reports/${fileNameBase}.json`, 'utf8'
             );
             const fileObj = JSON.parse(fileJSON);
             const report = hasBatch
@@ -777,7 +777,7 @@ const requestHandler = (request, response) => {
             parameters(report, query);
             const template = await fs.readFile(`digesters/${scriptName}.html`, 'utf8');
             const digest = replaceHolders(template, query);
-            await fs.writeFile(`${__dirname}/.data/digests/${reportName}.html`, digest);
+            await fs.writeFile(`${__dirname}/data/digests/${reportName}.html`, digest);
             // Serve an acknowledgement page.
             await render(
               'ack',
@@ -812,17 +812,17 @@ const requestHandler = (request, response) => {
               if (/^[a-z0-9]+$/.test(targetName)) {
                 // If the name is not already used:
                 const dir = targetStrings[targetType][1];
-                const fileNames = await fs.readdir(`.data/${dir}`);
+                const fileNames = await fs.readdir(`data/${dir}`);
                 if (fileNames.map(fileName => fileName.slice(0, -5)).includes(targetName)) {
                   err('ID already exists', `creating ${targetType}`, response);
                 }
                 else {
                   // Create the target.
-                  await fs.writeFile(`.data/${dir}/${targetName}.json`, target);
+                  await fs.writeFile(`data/${dir}/${targetName}.json`, target);
                   // If the target is a report:
                   if (targetType === 'report') {
                     // Delete any existing digest of a prior version of the same report.
-                    await fs.rm(`.data/digests/${targetName}.html`, {force: true});
+                    await fs.rm(`data/digests/${targetName}.html`, {force: true});
                   }
                   // Serve an acknowledgement page.
                   query.message = `Successfully created ${targetType} <strong>${targetName}</strong>.`;
@@ -853,7 +853,7 @@ const requestHandler = (request, response) => {
           if (targetName) {
             // Delete it.
             const extension = targetType === 'digest' ? 'html' : 'json';
-            await fs.rm(`.data/${targetStrings[targetType][1]}/${targetName}.${extension}`);
+            await fs.rm(`data/${targetStrings[targetType][1]}/${targetName}.${extension}`);
             // Add the page parameters to the query.
             query.message = `You have successfully removed ${targetType} <strong>${targetName}</strong>.`;
             // Serve the response page.
@@ -891,13 +891,13 @@ const server = protocolServer[creator](serverOptions, requestHandler);
 // Listens for requests.
 const serve = async () => {
   // Ensure that the local directories exist.
-  await fs.mkdir('.data/batches', {recursive: true});
-  await fs.mkdir('.data/digests', {recursive: true});
-  await fs.mkdir('.data/jobs', {recursive: true});
-  await fs.mkdir('.data/orders', {recursive: true});
-  await fs.mkdir('.data/reports', {recursive: true});
-  await fs.mkdir('.data/scripts', {recursive: true});
-  await fs.mkdir('.data/users', {recursive: true});
+  await fs.mkdir('data/batches', {recursive: true});
+  await fs.mkdir('data/digests', {recursive: true});
+  await fs.mkdir('data/jobs', {recursive: true});
+  await fs.mkdir('data/orders', {recursive: true});
+  await fs.mkdir('data/reports', {recursive: true});
+  await fs.mkdir('data/scripts', {recursive: true});
+  await fs.mkdir('data/users', {recursive: true});
   const port = process.env.PORT || '3005';
   server.listen(port, () => {
     console.log(

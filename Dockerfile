@@ -12,9 +12,6 @@ FROM gcr.io/distroless/nodejs:12
 USER 9000:9000
 
 # Base directory.
-# <CUSTOM>
-RUN chown 9000 /apps/nodejs/gcp/
-# </CUSTOM>
 WORKDIR /apps/nodejs/gcp/
 
 # Home directory.
