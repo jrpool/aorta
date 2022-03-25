@@ -894,8 +894,8 @@ const serve = async () => {
   for (
     const subdirName of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']
   ) {
-    const subdirMissing = await fs.stat(`data/${subdirName}`)
-    .catch(async error => {
+    await fs.stat(`data/${subdirName}`)
+    .catch(async () => {
       await fs.mkdir(`data/${subdirName}`);
     });
   }
