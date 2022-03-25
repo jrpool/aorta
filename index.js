@@ -891,13 +891,14 @@ const server = protocolServer[creator](serverOptions, requestHandler);
 // Listens for requests.
 const serve = async () => {
   // Ensure that the local directories exist.
-  await fs.mkdir('data/batches', {recursive: true});
-  await fs.mkdir('data/digests', {recursive: true});
-  await fs.mkdir('data/jobs', {recursive: true});
-  await fs.mkdir('data/orders', {recursive: true});
-  await fs.mkdir('data/reports', {recursive: true});
-  await fs.mkdir('data/scripts', {recursive: true});
-  await fs.mkdir('data/users', {recursive: true});
+  for (
+    const subdirName of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']
+  ) {
+    const subdirMissing = await fs.stat(`data/${subdirName}`)
+    .catch(async error => {
+      await fs.mkdir(`data/${subdirName}`);
+    });
+  }
   const port = process.env.PORT || '3005';
   server.listen(port, () => {
     console.log(
