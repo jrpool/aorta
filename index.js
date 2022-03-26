@@ -15,7 +15,9 @@ try {
     process.env[key] = env[key];
   });
 }
-catch(error) {};
+catch(error) {
+  console.log(`ERROR getting environment variables: ${error.message}`);
+};
 // Module to create a web server.
 const protocolName = process.env.PROTOCOL || 'http';
 const protocolServer = require(protocolName);
@@ -890,14 +892,9 @@ const creator = protocolName === 'http2' ? 'createSecureServer' : 'createServer'
 const server = protocolServer[creator](serverOptions, requestHandler);
 // Listens for requests.
 const serve = async () => {
-  // Ensure that the local directories exist.
-  for (
-    const subdirName of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']
-  ) {
-    await fs.stat(`data/${subdirName}`)
-    .catch(async () => {
-      await fs.mkdir(`data/${subdirName}`);
-    });
+  // Create any missing subdirectories of the data directory.
+  for (const subdir of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']) {
+    await fs.mkdir(`data/${subdir}`, {recursive: true});
   }
   const port = process.env.PORT || '3005';
   server.listen(port, () => {
