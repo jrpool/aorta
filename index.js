@@ -894,7 +894,11 @@ const server = protocolServer[creator](serverOptions, requestHandler);
 const serve = async () => {
   // Create the data directory and its subdirectories, insofar as they are missing.
   for (const subdir of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']) {
-    await fs.mkdir(`data/${subdir}`, {recursive: true});
+    try {
+      await fs.mkdir(`data/${subdir}`);
+    }
+    catch(error) {
+    }
   }
   const port = process.env.HOSTPORT || '3005';
   server.listen(port, () => {
