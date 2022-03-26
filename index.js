@@ -896,7 +896,7 @@ const serve = async () => {
   for (const subdir of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']) {
     await fs.mkdir(`data/${subdir}`, {recursive: true});
   }
-  const port = process.env.PORT || '3005';
+  const port = process.env.HOSTPORT || '3005';
   server.listen(port, () => {
     console.log(
       `Server listening at ${protocolName}://${process.env.HOST || 'localhost'}:${port}/aorta.`
