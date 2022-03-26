@@ -1,0 +1,7 @@
+# syntax=docker/dockerfile:1
+FROM node:12
+WORKDIR /app
+COPY . .
+RUN npm install --production
+CMD ["index.js"]
+EXPOSE 3005
