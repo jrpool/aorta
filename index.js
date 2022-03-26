@@ -16,7 +16,7 @@ try {
   });
 }
 catch(error) {
-  console.log(`ERROR getting environment variables: ${error.message}`);
+  console.log(`Did not get environment variables from .env.js: ${error.message}`);
 };
 // Module to create a web server.
 const protocolName = process.env.PROTOCOL || 'http';
@@ -898,6 +898,7 @@ const serve = async () => {
       await fs.mkdir(`data/${subdir}`);
     }
     catch(error) {
+      console.log(`Did not create data/${subdir}: ${error.message}`);
     }
   }
   const port = process.env.HOSTPORT || '3005';
