@@ -384,7 +384,7 @@ const writeJob = async (assignedBy, fileNameBase, testerName) => {
   // Write it as a job, to be used as a Testaro options object in handleRequest().
   await fs.writeFile(`data/jobs/${fileNameBase}.json`, JSON.stringify(order, null, 2));
   // Delete it as an order.
-  await fs.rm(`data/orders/${fileNameBase}.json`);
+  await fs.unlink(`data/orders/${fileNameBase}.json`);
 };
 // Gets the content of a script or batch.
 const getOrderPart = async (fileNameBase, partDir) => {
@@ -518,7 +518,7 @@ const requestHandler = (request, response) => {
                 `data/reports/${reportStatus[1]}.json`, JSON.stringify(report, null, 2)
               );
               // Delete the job.
-              await fs.rm(`data/jobs/${reportStatus[1]}.json`);
+              await fs.unlink(`data/jobs/${reportStatus[1]}.json`);
               // Send an acknowledgement.
               await sendAPI({success: 'reportCreated'}, response);
             }
@@ -824,7 +824,7 @@ const requestHandler = (request, response) => {
                   // If the target is a report:
                   if (targetType === 'report') {
                     // Delete any existing digest of a prior version of the same report.
-                    await fs.rm(`data/digests/${targetName}.html`, {force: true});
+                    await fs.unlink(`data/digests/${targetName}.html`, {force: true});
                   }
                   // Serve an acknowledgement page.
                   query.message = `Successfully created ${targetType} <strong>${targetName}</strong>.`;
@@ -855,7 +855,7 @@ const requestHandler = (request, response) => {
           if (targetName) {
             // Delete it.
             const extension = targetType === 'digest' ? 'html' : 'json';
-            await fs.rm(`data/${targetStrings[targetType][1]}/${targetName}.${extension}`);
+            await fs.unlink(`data/${targetStrings[targetType][1]}/${targetName}.${extension}`);
             // Add the page parameters to the query.
             query.message = `You have successfully removed ${targetType} <strong>${targetName}</strong>.`;
             // Serve the response page.
@@ -894,7 +894,7 @@ const server = protocolServer[creator](serverOptions, requestHandler);
 const serve = async () => {
   // Delete the README.md files of the data subdirectories. They exist to force directory tracking.
   for (const subdir of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']) {
-    await fs.rm(`data/${subdir}/README.md`, {force: true});
+    await fs.unlink(`data/${subdir}/README.md`, {force: true});
   };
     /*
   // Create the data directory and its subdirectories, insofar as they are missing.
