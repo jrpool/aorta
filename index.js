@@ -153,7 +153,8 @@ const apiErrorMessages = {
 const getTargets = async targetType => {
   // For each target:
   const dir = targetStrings[targetType][1];
-  const fileNames = await fs.readdir(`data/${dir}`);
+  const allFileNames = await fs.readdir(`data/${dir}`);
+  const fileNames = allFileNames.filter(fileName => fileName !== 'README.md');
   const targets = [];
   for (const fileName of fileNames) {
     // Get it.
@@ -191,7 +192,9 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
 // Adds the digest HTML items to a query.
 const addQueryDigests = async query => {
   const digestFileNames = await fs.readdir(`data/digests`);
-  const digestNames = digestFileNames.map(fileName => fileName.slice(0, -5));
+  const digestNames = digestFileNames
+  .filter(fileName => fileName !== 'README.md')
+  .map(fileName => fileName.slice(0, -5));
   query.targets = digestNames.map(digestName => {
     const input
       = `<input type="radio" name="targetName" value="${digestName}" required>`;
@@ -214,7 +217,8 @@ const addYou = query => {
 };
 // Returns whether a user exists and has a role, or why not.
 const userOK = async (userName, authCode, role) => {
-  const userFileNames = await fs.readdir('data/users');
+  const allFileNames = await fs.readdir('data/users');
+  const userFileNames = allFileNames.filter(fileName => fileName !== 'README.md');
   // If any users exist:
   if (userFileNames.length) {
     // If a user name was specified:
@@ -326,8 +330,8 @@ const writeOrder = async (userName, options, response) => {
 };
 // Validates a job and returns success or a reason for failure.
 const jobOK = async (fileNameBase, testerName) => {
-  const orderFileNames = await fs.readdir('data/orders');
-  const orderExists = orderFileNames.some(fileName => fileName === `${fileNameBase}.json`);
+  const allFileNames = await fs.readdir('data/orders');
+  const orderExists = allFileNames.some(fileName => fileName === `${fileNameBase}.json`);
   if (orderExists) {
     const userFileNames = await fs.readdir('data/users');
     const userExists = userFileNames.some(fileName => fileName === `${testerName}.json`);
@@ -892,10 +896,12 @@ const creator = protocolName === 'http2' ? 'createSecureServer' : 'createServer'
 const server = protocolServer[creator](serverOptions, requestHandler);
 // Listens for requests.
 const serve = async () => {
+  /*
   // Delete the README.md files of the data subdirectories. They exist to force directory tracking.
   for (const subdir of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']) {
     await fs.unlink(`data/${subdir}/README.md`, {force: true});
   };
+  */
     /*
   // Create the data directory and its subdirectories, insofar as they are missing.
   for (const subdir of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']) {
