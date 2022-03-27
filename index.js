@@ -892,6 +892,11 @@ const creator = protocolName === 'http2' ? 'createSecureServer' : 'createServer'
 const server = protocolServer[creator](serverOptions, requestHandler);
 // Listens for requests.
 const serve = async () => {
+  // Delete the README.md files of the data subdirectories. They exist to force directory tracking.
+  for (const subdir of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']) {
+    await fs.rm(`data/${subdir}/README.md`, {force: true});
+  };
+    /*
   // Create the data directory and its subdirectories, insofar as they are missing.
   for (const subdir of ['batches', 'digests', 'jobs', 'orders', 'reports', 'scripts', 'users']) {
     try {
@@ -901,6 +906,7 @@ const serve = async () => {
       console.log(`Did not create data/${subdir}: ${error.message}`);
     }
   }
+  */
   const port = process.env.HOSTPORT || '3005';
   server.listen(port, () => {
     console.log(
