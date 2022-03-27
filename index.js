@@ -217,7 +217,9 @@ const addYou = query => {
 };
 // Returns whether a user exists and has a role, or why not.
 const userOK = async (userName, authCode, role) => {
-  const allFileNames = await fs.readdir('data/users');
+  console.log('About to get user file names');
+  const allFileNames = await fs.readdir(`${__dirname}/data/users`);
+  console.log(allFileNames);
   const userFileNames = allFileNames.filter(fileName => fileName !== 'README.md');
   // If any users exist:
   if (userFileNames.length) {
