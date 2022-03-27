@@ -19,8 +19,8 @@ ENV HOME=/apps/nodejs/gcp/
 
 # COPY --from=builder node_modules ./node_modules
 
-# Copy all files to the home directory.
-COPY * ./
+# Copy the root directory to the home directory.
+COPY . .
 
 # Do not copy the certs and config folder in this image. They will be injected by Kubernetes.
 # To run this image locally, mount the host nodecert and config folder to the Docker.
