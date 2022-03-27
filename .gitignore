@@ -12,3 +12,4 @@ node_modules/
 .env.js
 data/*/*.json
 data/digests/*.html
+data/temp/

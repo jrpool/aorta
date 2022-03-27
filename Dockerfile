@@ -38,8 +38,7 @@ COPY . .
 # <image name> (all lowercase and if needed separated by hyphen, e.g. redis-service)
 
 # If pipeline configs are not passed, then these are used
-ENV NO_UPDATE_NOTIFIER=true NODE_ENV=production PORT=9082 LOGCONSOLE=true CONFIGBASEPATH=/apps/nodejs/gcp/config/ CERTSBASEPATH=/apps/nodejs/gcp/nodecerts LOGBASEPATH=/apps/nodejs/gcp/log PROTOCOL=http HOST=localhost HOSTPORT=3005
-
+ENV NO_UPDATE_NOTIFIER=true NODE_ENV=production PORT=9082 LOGCONSOLE=true CONFIGBASEPATH=/apps/nodejs/gcp/config/ CERTSBASEPATH=/apps/nodejs/gcp/nodecerts LOGBASEPATH=/apps/nodejs/gcp/log PROTOCOL=http HOST=localhost HOSTPORT=3005 SMTP_SERVER=paz1trendvip.caremarkrx.net MAIL_SENDER=no-reply@cvshealth.com
 
 # port the server will be listening to.
 EXPOSE 9082
