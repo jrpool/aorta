@@ -16,7 +16,7 @@ try {
   });
 }
 catch(error) {
-  console.log(`Did not get environment variables from .env.js: ${error.message}`);
+  console.log('No .env.js to get more environment variables from');
 };
 // Module to create a web server.
 const protocolName = process.env.PROTOCOL || 'http';
@@ -149,12 +149,16 @@ const apiErrorMessages = {
   noUserName: 'noUserName',
   role: 'role'
 };
+// Get an array of the names of the non-README files in a subdirectory of 'data'.
+const dataFileNames = async subdir => {
+  const allFileNames = await fs.readdir(`data/${subdir}`);
+  return allFileNames.filter(fileName => fileName !== 'README.md');
+};
 // Get an array of ID-equipped scripts, batches, orders, jobs, users, testers, or reports.
 const getTargets = async targetType => {
   // For each target:
   const dir = targetStrings[targetType][1];
-  const allFileNames = await fs.readdir(`data/${dir}`);
-  const fileNames = allFileNames.filter(fileName => fileName !== 'README.md');
+  const fileNames = await dataFileNames(dir);
   const targets = [];
   for (const fileName of fileNames) {
     // Get it.
@@ -191,10 +195,8 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
 };
 // Adds the digest HTML items to a query.
 const addQueryDigests = async query => {
-  const digestFileNames = await fs.readdir(`data/digests`);
-  const digestNames = digestFileNames
-  .filter(fileName => fileName !== 'README.md')
-  .map(fileName => fileName.slice(0, -5));
+  const digestFileNames = await dataFileNames('digests');
+  const digestNames = digestFileNames.map(fileName => fileName.slice(0, -5));
   query.targets = digestNames.map(digestName => {
     const input
       = `<input type="radio" name="targetName" value="${digestName}" required>`;
@@ -217,11 +219,7 @@ const addYou = query => {
 };
 // Returns whether a user exists and has a role, or why not.
 const userOK = async (userName, authCode, role) => {
-  console.log(`All files at root level: ${await fs.readdir('.')}`);
-  console.log('About to get user file names');
-  const allFileNames = await fs.readdir(`${__dirname}/data/users`);
-  console.log(allFileNames);
-  const userFileNames = allFileNames.filter(fileName => fileName !== 'README.md');
+  const userFileNames = await dataFileNames('users');
   // If any users exist:
   if (userFileNames.length) {
     // If a user name was specified:
@@ -333,10 +331,10 @@ const writeOrder = async (userName, options, response) => {
 };
 // Validates a job and returns success or a reason for failure.
 const jobOK = async (fileNameBase, testerName) => {
-  const allFileNames = await fs.readdir('data/orders');
-  const orderExists = allFileNames.some(fileName => fileName === `${fileNameBase}.json`);
+  const orderFileNames = await dataFileNames('orders');
+  const orderExists = orderFileNames.some(fileName => fileName === `${fileNameBase}.json`);
   if (orderExists) {
-    const userFileNames = await fs.readdir('data/users');
+    const userFileNames = await dataFileNames('users');
     const userExists = userFileNames.some(fileName => fileName === `${testerName}.json`);
     if (userExists) {
       const userJSON = await fs.readFile(`data/users/${testerName}.json`, 'utf8');
@@ -587,7 +585,7 @@ const requestHandler = (request, response) => {
                 else if (targetType === 'digest') {
                   pageName = 'createDigests';
                   // Identify the digestable reports and host reports.
-                  const digesterFileNames = await fs.readdir(`${__dirname}/digesters`);
+                  const digesterFileNames = await fs.readdir('digesters');
                   const digesterNames = digesterFileNames
                   .filter(fileName => fileName.endsWith('.js'))
                   .map(fileName => fileName.slice(0, -3));
@@ -821,7 +819,7 @@ const requestHandler = (request, response) => {
               if (/^[a-z0-9]+$/.test(targetName)) {
                 // If the name is not already used:
                 const dir = targetStrings[targetType][1];
-                const fileNames = await fs.readdir(`data/${dir}`);
+                const fileNames = await dataFileNames(dir);
                 if (fileNames.map(fileName => fileName.slice(0, -5)).includes(targetName)) {
                   err('ID already exists', `creating ${targetType}`, response);
                 }
