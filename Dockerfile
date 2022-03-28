@@ -1,8 +1,11 @@
 # --------------------------------------------------------------------------
-FROM node:12 as builder
+FROM node:16 as builder
 # COPY package.json package.json
 # COPY package-lock.json package-lock.json
 # COPY .npmrc .npmrc
+
+# Base directory.
+WORKDIR /apps/nodejs/gcp/
 
 RUN  npm install --production 
 # --------------------------------------------------------------------------
