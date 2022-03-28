@@ -7,7 +7,7 @@ FROM node:12 as builder
 RUN  npm install --production 
 # --------------------------------------------------------------------------
 
-FROM gcr.io/distroless/nodejs:12
+FROM gcr.io/distroless/nodejs:16
 
 USER 9000:9000
 
