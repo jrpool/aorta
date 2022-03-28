@@ -14,6 +14,9 @@ FROM gcr.io/distroless/nodejs:16
 
 USER 9000:9000
 
+# Base directory.
+WORKDIR /apps/nodejs/gcp/
+
 # Home directory.
 ENV HOME=/apps/nodejs/gcp/
 
