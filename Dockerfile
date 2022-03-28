@@ -4,15 +4,15 @@ FROM node:16 as builder
 # COPY package-lock.json package-lock.json
 # COPY .npmrc .npmrc
 
+# Base directory.
+WORKDIR /apps/nodejs/gcp/
+
 RUN  npm install --production 
 # --------------------------------------------------------------------------
 
 FROM gcr.io/distroless/nodejs:16
 
 USER 9000:9000
-
-# Base directory.
-WORKDIR /apps/nodejs/gcp/
 
 # Home directory.
 ENV HOME=/apps/nodejs/gcp/
