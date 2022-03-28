@@ -2,7 +2,7 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <title>Aorta</title>
+    <title>Home | Aorta</title>
     <meta name="description" content="Automated Order Router for Tests of Accessibility (Aorta)">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/aorta/style.css">
@@ -11,28 +11,13 @@
   </head>
   <body>
     <main>
-      <h1>Aorta</h1>
+      <h1>Aorta home</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
-      <form action="/aorta/action" method="post" class="flex">
-        <fieldset>
-          <legend>Action</legend>
-          <div><label><input type="radio" name="action" value="see" required> See</label></div>
-          <div><label><input type="radio" name="action" value="create" required> Create</label></div>
-          <div><label><input type="radio" name="action" value="remove" required> Remove</label></div>
-        </fieldset>
-        <fieldset>
-          <legend>Do this to</legend>
-          <div><label><input type="radio" name="targetType" value="script" required> Script</label></div>
-          <div><label><input type="radio" name="targetType" value="batch" required> Batch</label></div>
-          <div><label><input type="radio" name="targetType" value="order" required> Order</label></div>
-          <div><label><input type="radio" name="targetType" value="job" required> Job</label></div>
-          <div><label><input type="radio" name="targetType" value="report" required> Report</label></div>
-          <div><label><input type="radio" name="targetType" value="digest" required> Digest</label></div>
-          <div><label><input type="radio" name="targetType" value="user" required> User</label></div>
-        </fieldset>
-        __you__
-        <p><button>Submit</button></p>
-      </form>
+      <p>What do you want to do?</p>
+      <ul>
+        <li><a href="/aorta/actions">Use Aorta</a></li>
+        <li><a href="/aorta/bulk">Transfer bulk data from or to Aorta</a></li>
+      </ul>
     </main>
   </body>
 </html>

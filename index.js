@@ -427,10 +427,20 @@ const requestHandler = (request, response) => {
     if (method === 'GET') {
       // If it is the home page:
       if (requestURL === '/aorta') {
-        // Add the page parameters to the query.
+        // Serve the page.
+        await render('index', {}, response);
+      }
+      // Otherwise, if it is the actions page:
+      if (requestURL === '/aorta/actions') {
         addYou(query);
         // Serve the page.
-        await render('index', query, response);
+        await render('actions', query, response);
+      }
+      // Otherwise, if it is the bulk page:
+      if (requestURL === '/aorta/bulk') {
+        addYou(query);
+        // Serve the page.
+        await render('bulk', query, response);
       }
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
@@ -532,6 +542,22 @@ const requestHandler = (request, response) => {
           else {
             await sendAPI({error: 'badRequest'});
           }
+        }
+      }
+      // Otherwise, if it is the bulk form:
+      else if (requestURL === '/aorta/bulk') {
+        const {bulk} = bodyObject;
+        // If the user requested a transfer from Aorta:
+        if (bulk === 'fromAorta') {
+          // Assemble the data.
+          const data = {
+            scripts: [],
+            batches: [],
+            orders: [],
+            jobs: [],
+            reports: [],
+            users: []
+          };
         }
       }
       // Otherwise, if it is the home-page form:
