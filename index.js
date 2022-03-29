@@ -69,12 +69,18 @@ const render = async (nameBase, query, response) => {
   }
 };
 // Serves a resource.
-const serveResource = async (fileName, contentType, encoding, response) => {
-  const readArgs = [fileName];
-  if (encoding) {
-    readArgs.push(encoding);
+const serveResource = async (isFile, resource, contentType, encoding, response) => {
+  let content;
+  if (isFile) {
+    const readArgs = [fileName];
+    if (encoding) {
+      readArgs.push(encoding);
+    }
+    content = await fs.readFile(...readArgs);
   }
-  const content = await fs.readFile(...readArgs);
+  else {
+    content = resource;
+  }
   response.setHeader('Content-Type', contentType);
   response.end(content);
 };
@@ -439,23 +445,51 @@ const requestHandler = (request, response) => {
       // Otherwise, if it is the bulk page:
       if (requestURL === '/aorta/bulk') {
         addYou(query);
+        // If a download was requested:
+        if (query.bulk === 'fromAorta') {
+          // Assemble the data.
+          const data = {
+            scripts: [],
+            batches: [],
+            orders: [],
+            jobs: [],
+            reports: [],
+            users: []
+          };
+          const dataTypes = Object.keys(data);
+          for (const dataType of dataTypes) {
+            const fileNames = await fs.readdir(`data/${dataType}`);
+            const dataFileNames = fileNames.filter(fileName => fileName !== 'README.md');
+            for (const fileName of dataFileNames) {
+              const fileJSON = await fs.readFile(`data/${dataType}/${fileName}`);
+              const obj = JSON.parse(fileJSON);
+              const id = fileName.slice(0, -5);
+              data[dataType].push({
+                id,
+                obj
+              });
+            }
+          };
+          const dataJSON = JSON.stringify(data, null, 2);
+          await serveResource(false, dataJSON, 'application/json', 'utf8', response);
+        }
         // Serve the page.
         await render('bulk', query, response);
       }
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
         // Serve it.
-        await serveResource('style.css', 'text/css', 'utf8', response);
+        await serveResource(true, 'style.css', 'text/css', 'utf8', response);
       }
       // Otherwise, if it is the script:
       else if (requestURL === '/aorta/script.js') {
         // Serve it.
-        await serveResource('script.js', 'text/javascript', 'utf8', response);
+        await serveResource(true, 'script.js', 'text/javascript', 'utf8', response);
       }
       // Otherwise, if it is the site icon:
       else if (requestURL.startsWith('/aorta/favicon.')) {
         // Serve it.
-        await serveResource('favicon.png', 'image/png', '', response);
+        await serveResource(true, 'favicon.png', 'image/png', '', response);
       }
       // Otherwise, i.e. if the request is invalid:
       else {
@@ -556,8 +590,10 @@ const requestHandler = (request, response) => {
             orders: [],
             jobs: [],
             reports: [],
+            digests: [],
             users: []
           };
+
         }
       }
       // Otherwise, if it is the home-page form:
