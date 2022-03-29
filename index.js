@@ -68,20 +68,20 @@ const render = async (nameBase, query, response) => {
     await servePage(renderedPage, `/aorta/${nameBase}.html`, response);
   }
 };
-// Serves a resource.
-const serveResource = async (isFile, resource, contentType, encoding, response) => {
-  let content;
-  if (isFile) {
-    const readArgs = [fileName];
-    if (encoding) {
-      readArgs.push(encoding);
-    }
-    content = await fs.readFile(...readArgs);
+// Serves a file.
+const serveFile = async (fileName, contentType, encoding, response) => {
+  const readArgs = [fileName];
+  if (encoding) {
+    readArgs.push(encoding);
   }
-  else {
-    content = resource;
-  }
+  content = await fs.readFile(...readArgs);
   response.setHeader('Content-Type', contentType);
+  response.end(content);
+};
+// Serves content to be saved to a file.
+const serveAttachment = async (content, saveName, contentType, response) => {
+  response.setHeader('Content-Type', contentType);
+  response.setHeader('Content-Disposition', `attachment; filename="${saveName}"`);
   response.end(content);
 };
 // Processes a thrown error.
@@ -433,63 +433,35 @@ const requestHandler = (request, response) => {
     if (method === 'GET') {
       // If it is the home page:
       if (requestURL === '/aorta') {
-        // Serve the page.
+        // Serve it.
         await render('index', {}, response);
       }
       // Otherwise, if it is the actions page:
       if (requestURL === '/aorta/actions') {
         addYou(query);
-        // Serve the page.
+        // Serve it.
         await render('actions', query, response);
       }
       // Otherwise, if it is the bulk page:
-      if (requestURL === '/aorta/bulk') {
+      else if (requestURL === '/aorta/bulk') {
         addYou(query);
-        // If a download was requested:
-        if (query.bulk === 'fromAorta') {
-          // Assemble the data.
-          const data = {
-            scripts: [],
-            batches: [],
-            orders: [],
-            jobs: [],
-            reports: [],
-            users: []
-          };
-          const dataTypes = Object.keys(data);
-          for (const dataType of dataTypes) {
-            const fileNames = await fs.readdir(`data/${dataType}`);
-            const dataFileNames = fileNames.filter(fileName => fileName !== 'README.md');
-            for (const fileName of dataFileNames) {
-              const fileJSON = await fs.readFile(`data/${dataType}/${fileName}`);
-              const obj = JSON.parse(fileJSON);
-              const id = fileName.slice(0, -5);
-              data[dataType].push({
-                id,
-                obj
-              });
-            }
-          };
-          const dataJSON = JSON.stringify(data, null, 2);
-          await serveResource(false, dataJSON, 'application/json', 'utf8', response);
-        }
-        // Serve the page.
+        // Serve it.
         await render('bulk', query, response);
       }
       // Otherwise, if it is the style sheet:
       else if (requestURL === '/aorta/style.css') {
         // Serve it.
-        await serveResource(true, 'style.css', 'text/css', 'utf8', response);
+        await serveFile('style.css', 'text/css', 'utf8', response);
       }
       // Otherwise, if it is the script:
       else if (requestURL === '/aorta/script.js') {
         // Serve it.
-        await serveResource(true, 'script.js', 'text/javascript', 'utf8', response);
+        await serveFile('script.js', 'text/javascript', 'utf8', response);
       }
       // Otherwise, if it is the site icon:
       else if (requestURL.startsWith('/aorta/favicon.')) {
         // Serve it.
-        await serveResource(true, 'favicon.png', 'image/png', '', response);
+        await serveFile('favicon.png', 'image/png', '', response);
       }
       // Otherwise, i.e. if the request is invalid:
       else {
@@ -580,20 +552,69 @@ const requestHandler = (request, response) => {
       }
       // Otherwise, if it is the bulk form:
       else if (requestURL === '/aorta/bulk') {
-        const {bulk} = bodyObject;
-        // If the user requested a transfer from Aorta:
-        if (bulk === 'fromAorta') {
-          // Assemble the data.
-          const data = {
-            scripts: [],
-            batches: [],
-            orders: [],
-            jobs: [],
-            reports: [],
-            digests: [],
-            users: []
-          };
-
+        const {bulk, userName, authCode} = bodyObject;
+        // If the user exists and has permission for the action:
+        if (await screenWebUser(
+          userName, authCode, ['manage'], 'identifying transfer type', response
+        )) {
+          // If the user requested a transfer from Aorta:
+          if (bulk === 'fromAorta') {
+            // Assemble the data, excluding digests.
+            const data = {
+              scripts: [],
+              batches: [],
+              orders: [],
+              jobs: [],
+              reports: [],
+              users: []
+            };
+            const dataTypes = Object.keys(data);
+            for (const dataType of dataTypes) {
+              const fileNames = await fs.readdir(`data/${dataType}`);
+              const dataFileNames = fileNames.filter(fileName => fileName !== 'README.md');
+              for (const fileName of dataFileNames) {
+                const fileJSON = await fs.readFile(`data/${dataType}/${fileName}`);
+                const obj = JSON.parse(fileJSON);
+                const id = fileName.slice(0, -5);
+                data[dataType].push({
+                  id,
+                  obj
+                });
+              }
+            };
+            const dataJSON = JSON.stringify(data, null, 2);
+            // Serve the data as a file to be saved.
+            await serveAttachment(dataJSON, 'aortaData.json', 'application/json', response);
+          }
+          // Otherwise, i.e. if an upload was requested:
+          else {
+            // Serve the upload page.
+            const query = {};
+            addYou(query);
+            await render('bulkToAorta', query, response);
+          }
+        }
+      }
+      // Otherwise, if it is the upload form:
+      else if (requestURL = '/aorta/bulkToAorta') {
+        const {dataJSON, userName, authCode} = bodyObject;
+        // If the user exists and has permission for the action:
+        if (await screenWebUser(userName, authCode, ['manage'], 'receiving data', response)) {
+          // Add the uploaded data to the Aorta data, replacing any items with identical names.
+          try {
+            const data = JSON.parse(dataJSON);
+            const dataTypes = Object.keys(data);
+            for (const dataType of dataTypes) {
+              const typeData = data[dataType];
+              for (const item of typeData) {
+                const itemDataJSON = JSON.stringify(item.data, null, 2);
+                await fs.writeFile(`data/${dataType}/${item.id}.json`, itemDataJSON);
+              }
+            }
+          }
+          catch(error) {
+            err(error.message, 'transfering data to Aorta', response);
+          }
         }
       }
       // Otherwise, if it is the home-page form:

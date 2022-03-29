@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <title>Bulk transfer to Aorta | Aorta</title>
+    <meta name="description" content="Automated Order Router for Tests of Accessibility (Aorta)">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/aorta/style.css">
+    <link rel="icon" href="/aorta/favicon.png">
+    <script defer src="/aorta/script.js"></script>
+  </head>
+  <body>
+    <header>
+      <p><a href="/aorta">Home</a></p>
+    </header>
+    <main>
+      <h1>Bulk transfer to Aorta</h1>
+      <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
+      <form action="/aorta/bulkToAorta" method="post" class="flex">
+        <div><label>
+          Your file of Aorta data
+          <input type="file" name="dataJSON" accept="application/json" required>
+        </label></div>
+        __you__
+        <p><button>Upload</button></p>
+      </form>
+    </main>
+  </body>
+</html>
