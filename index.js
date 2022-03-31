@@ -437,7 +437,7 @@ const requestHandler = (request, response) => {
         await render('index', {}, response);
       }
       // Otherwise, if it is the actions page:
-      if (requestURL === '/aorta/actions') {
+      else if (requestURL === '/aorta/actions') {
         addYou(query);
         // Serve it.
         await render('actions', query, response);
@@ -555,7 +555,7 @@ const requestHandler = (request, response) => {
         const {bulk, userName, authCode} = bodyObject;
         // If the user exists and has permission for the action:
         if (await screenWebUser(
-          userName, authCode, ['manage'], 'identifying transfer type', response
+          userName, authCode, 'manage', 'receiving transfer request', response
         )) {
           // If the user requested a transfer from Aorta:
           if (bulk === 'fromAorta') {
@@ -596,10 +596,11 @@ const requestHandler = (request, response) => {
         }
       }
       // Otherwise, if it is the upload form:
-      else if (requestURL = '/aorta/bulkToAorta') {
+      else if (requestURL === '/aorta/bulkToAorta') {
+        console.log(`bodyObject starts with ${JSON.stringify(bodyObject, null, 2)}`);
         const {dataJSON, userName, authCode} = bodyObject;
         // If the user exists and has permission for the action:
-        if (await screenWebUser(userName, authCode, ['manage'], 'receiving data', response)) {
+        if (await screenWebUser(userName, authCode, 'manage', 'receiving data', response)) {
           // Add the uploaded data to the Aorta data, replacing any items with identical names.
           try {
             const data = JSON.parse(dataJSON);

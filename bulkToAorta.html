@@ -16,7 +16,7 @@
     <main>
       <h1>Bulk transfer to Aorta</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
-      <form action="/aorta/bulkToAorta" method="post" class="flex">
+      <form action="/aorta/bulkToAorta" method="post" enctype="multipart/form-data" class="flex">
         <div><label>
           Your file of Aorta data
           <input type="file" name="dataJSON" accept="application/json" required>
