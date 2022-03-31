@@ -453,10 +453,15 @@ const requestHandler = (request, response) => {
         // Serve it.
         await serveFile('style.css', 'text/css', 'utf8', response);
       }
-      // Otherwise, if it is the script:
+      // Otherwise, if it is the main script:
       else if (requestURL === '/aorta/script.js') {
         // Serve it.
         await serveFile('script.js', 'text/javascript', 'utf8', response);
+      }
+      // Otherwise, if it is the bulk-to-Aorta script:
+      else if (requestURL === '/aorta/bulkToAorta.js') {
+        // Serve it.
+        await serveFile('bulkToAorta.js', 'text/javascript', 'utf8', response);
       }
       // Otherwise, if it is the site icon:
       else if (requestURL.startsWith('/aorta/favicon.')) {
@@ -597,8 +602,7 @@ const requestHandler = (request, response) => {
       }
       // Otherwise, if it is the upload form:
       else if (requestURL === '/aorta/bulkToAorta') {
-        console.log(`bodyObject starts with ${JSON.stringify(bodyObject, null, 2)}`);
-        const {dataJSON, userName, authCode} = bodyObject;
+        const {dataJSON, fileName, userName, authCode} = bodyObject;
         // If the user exists and has permission for the action:
         if (await screenWebUser(userName, authCode, 'manage', 'receiving data', response)) {
           // Add the uploaded data to the Aorta data, replacing any items with identical names.
@@ -608,10 +612,16 @@ const requestHandler = (request, response) => {
             for (const dataType of dataTypes) {
               const typeData = data[dataType];
               for (const item of typeData) {
-                const itemDataJSON = JSON.stringify(item.data, null, 2);
+                const itemDataJSON = JSON.stringify(item.obj, null, 2);
                 await fs.writeFile(`data/${dataType}/${item.id}.json`, itemDataJSON);
               }
-            }
+            };
+            // Serve an acknowledgement page.
+            await render(
+              'ack',
+              {message: `Successfully transfered bulk data to Aorta.`},
+              response
+            );
           }
           catch(error) {
             err(error.message, 'transfering data to Aorta', response);

@@ -14,7 +14,7 @@ if (storedAuthCode) {
   document.body.querySelector('input[name=authCode]').value = storedAuthCode;
 }
 // When the form is submitted:
-document.body.querySelector('form').onsubmit = () => {
+document.body.querySelector('form').addEventListener('submit', () => {
   // Store the username and authorization code if different from those stored.
   const userNameInput = document.querySelector('input[name=userName]');
   const authCodeInput = document.querySelector('input[name=authCode]');
@@ -26,4 +26,4 @@ document.body.querySelector('form').onsubmit = () => {
   if (authCode && authCode !== storedAuthCode) {
     localStorage.setItem('authCode', authCode);
   }
-};
+});
