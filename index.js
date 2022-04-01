@@ -728,7 +728,7 @@ const requestHandler = (request, response) => {
                     );
                   }
                   else if (targetType === 'batch') {
-                    query.initValue = await fs.readFile(`sampleData/batches/batchx.json`);
+                    query.initValue = await fs.readFile(`sampleData/batches/weborgs.json`);
                   }
                 }
                 await render(pageName, query, response);
