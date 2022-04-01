@@ -602,7 +602,7 @@ const requestHandler = (request, response) => {
       }
       // Otherwise, if it is the upload form:
       else if (requestURL === '/aorta/bulkToAorta') {
-        const {dataJSON, fileName, userName, authCode} = bodyObject;
+        const {dataJSON, userName, authCode} = bodyObject;
         // If the user exists and has permission for the action:
         if (await screenWebUser(userName, authCode, 'manage', 'receiving data', response)) {
           // Add the uploaded data to the Aorta data, replacing any items with identical names.
