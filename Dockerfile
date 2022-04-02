@@ -1,14 +1,9 @@
 # --------------------------------------------------------------------------
 FROM node:12 as builder
-# COPY package.json package.json
-# COPY package-lock.json package-lock.json
-# COPY .npmrc .npmrc
+COPY package.json package.json
+COPY package-lock.json package-lock.json
 
-# Base directory (not in CVS template).
-WORKDIR /apps/nodejs/gcp/
-
-RUN npm install --production --cache /tmp/empty-cache
-RUN npm install nodemailer
+RUN npm install --production
 # --------------------------------------------------------------------------
 
 FROM gcr.io/distroless/nodejs:16
@@ -21,7 +16,7 @@ WORKDIR /apps/nodejs/gcp/
 # Home directory.
 ENV HOME=/apps/nodejs/gcp/
 
-# COPY --from=builder node_modules ./node_modules
+COPY --from=builder node_modules ./node_modules
 
 # Copy the root directory to the home directory.
 COPY . .
