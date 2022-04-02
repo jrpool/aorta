@@ -570,7 +570,9 @@ const requestHandler = (request, response) => {
               await sendAPI({success: 'reportCreated'}, response);
               // Notify the order creator by email.
               await email(
-                userName, 'Report ready', `The Aorta report you ordered (${id}) is ready.`
+                userName,
+                'Report ready',
+                `The Aorta report you ordered (${id}) is ready at ${process.env.EMAIL_LINK}.`
               );
             }
           }
