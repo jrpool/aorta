@@ -41,7 +41,7 @@ COPY . .
 # <image name> (all lowercase and if needed separated by hyphen, e.g. redis-service)
 
 # If pipeline configs are not passed, then these are used
-ENV NO_UPDATE_NOTIFIER=true NODE_ENV=production PORT=9082 LOGCONSOLE=true CONFIGBASEPATH=/apps/nodejs/gcp/config/ CERTSBASEPATH=/apps/nodejs/gcp/nodecerts LOGBASEPATH=/apps/nodejs/gcp/log HOST=localhost HOSTPORT=3005 PROTOCOL=http SMTP_SERVER=paz1trendvip.caremarkrx.net SMTP_PORT=25 MAIL_SENDER=no-reply@cvshealth.com REPLY_TO=a11yautomation@AetnaO365.onmicrosoft.com EMAIL_LINK=https://dev.digital-services.cvshealth.com/aorta
+ENV NO_UPDATE_NOTIFIER=true NODE_ENV=production PORT=9082 LOGCONSOLE=true CONFIGBASEPATH=/apps/nodejs/gcp/config/ CERTSBASEPATH=/apps/nodejs/gcp/nodecerts LOGBASEPATH=/apps/nodejs/gcp/log HOST=localhost HOSTPORT=3005 PROTOCOL=http SMTP_SERVER=paz1trendvip.caremarkrx.net SMTP_PORT=25 MAIL_SENDER=no-reply@cvshealth.com REPLY_TO=a11yautomation@AetnaO365.onmicrosoft.com EMAIL_LINK=https://dev.digital-services.cvshealth.com/aorta/actions
 
 # Port the server will be listening to.
 EXPOSE 9082
