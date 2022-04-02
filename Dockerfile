@@ -8,7 +8,7 @@ FROM node:12 as builder
 WORKDIR /apps/nodejs/gcp/
 
 # Prevent using cache and thereby omitting new dependencies.
-RUN npm cache clean
+RUN npm cache verify
 RUN npm install --production
 # --------------------------------------------------------------------------
 
