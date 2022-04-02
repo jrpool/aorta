@@ -7,8 +7,6 @@ FROM node:12 as builder
 # Base directory (not in CVS template).
 WORKDIR /apps/nodejs/gcp/
 
-# Prevent using cache and thereby omitting new dependencies.
-RUN npm cache verify
 RUN npm install --production
 # --------------------------------------------------------------------------
 
