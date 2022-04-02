@@ -47,15 +47,16 @@ const scriptInit = 'asp09';
 // Sends an email message to a user.
 const email = async (userName, subject, body) => {
   const transporter = nodemailer.createTransport({
-    host: 'paz1trendvip.caremarkrx.net',
-    port: 25,
+    host: process.env.SMTP_SERVER,
+    port: process.env.SMTP_PORT,
     secure: false
   });
   const userDataJSON = await fs.readFile(`data/users/${userName}.json`);
   const userData = JSON.parse(userDataJSON);
   const to = userData.email;
   await transporter.sendMail({
-    from: 'no-reply@cvshealth.com',
+    from: process.env.MAIL_SENDER,
+    replyTo: process.env.REPLY_TO,
     to,
     subject,
     text: body
