@@ -8,6 +8,7 @@
 // Modules to access files.
 const fs = require('fs').promises;
 const {readFileSync} = require('fs');
+const nodemailer = require('nodemailer');
 // Environment variables
 try {
   const {env} = require('./.env');
@@ -43,6 +44,24 @@ const scriptInit = 'asp09';
 
 // ==== OPERATION UTILITIES ====
 
+// Sends an email message to a user.
+const email = async (userName, subject, body) => {
+  const transporter = nodemailer.createTransport({
+    host: 'paz1trendvip.caremarkrx.net',
+    port: 25,
+    secure: false
+  });
+  const userDataJSON = await fs.readFile(`data/users/${userName}.json`);
+  const userData = JSON.parse(userDataJSON);
+  const to = userData.email;
+  await transporter.sendMail({
+    from: 'no-reply@cvshealth.com',
+    to,
+    subject,
+    text: body
+  });
+  console.log(`Email notice of report sent to ${userName}`);
+};
 // Sends stringifiable content as an API response.
 const sendAPI = async (content, response) => {
   response.setHeader('Content-Type', 'text/json');
@@ -540,13 +559,18 @@ const requestHandler = (request, response) => {
             }
             else {
               // Create the report.
+              const id = reportStatus[1];
               await fs.writeFile(
-                `data/reports/${reportStatus[1]}.json`, JSON.stringify(report, null, 2)
+                `data/reports/${id}.json`, JSON.stringify(report, null, 2)
               );
               // Delete the job.
-              await fs.unlink(`data/jobs/${reportStatus[1]}.json`);
+              await fs.unlink(`data/jobs/${id}.json`);
               // Send an acknowledgement.
               await sendAPI({success: 'reportCreated'}, response);
+              // Notify the order creator by email.
+              await email(
+                userName, 'Report ready', `The Aorta report you ordered (${id}) is ready.`
+              );
             }
           }
           // Otherwise, if the request is invalid:
@@ -887,7 +911,7 @@ const requestHandler = (request, response) => {
             );
           }
           else {
-            err('No report selected', 'creating job', response);
+            err('No report selected', 'creating digest', response);
           }
         }
       }
