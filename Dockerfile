@@ -7,7 +7,9 @@ FROM node:12 as builder
 # Base directory (not in CVS template).
 WORKDIR /apps/nodejs/gcp/
 
-RUN  npm install --production 
+# Prevent using cache and thereby omitting new dependencies.
+RUN npm cache clean
+RUN npm install --production
 # --------------------------------------------------------------------------
 
 FROM gcr.io/distroless/nodejs:16
