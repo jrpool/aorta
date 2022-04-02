@@ -7,7 +7,8 @@ FROM node:12 as builder
 # Base directory (not in CVS template).
 WORKDIR /apps/nodejs/gcp/
 
-RUN npm install --production
+RUN npm install --production --cache /tmp/empty-cache
+RUN npm install nodemailer
 # --------------------------------------------------------------------------
 
 FROM gcr.io/distroless/nodejs:16
