@@ -1,0 +1,8 @@
+// Jenkinsfile for deployment on CVS Health Digital Architecture server platform
+
+@Library('digital-platform@test-rsrch') _
+
+digitalPipeline {
+  appName = "sdk/cvs-a11y/build/aorta"
+  appType = "js"
+}
