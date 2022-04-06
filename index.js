@@ -355,7 +355,7 @@ const writeOrder = async (userName, options, response) => {
     'ack', {message: `Successfully created order <strong>${id}</strong>.`}, response
   );
 };
-// Validates a job and returns success or a reason for failure.
+// Validates an existing or proposed job and returns success or a reason for failure.
 const jobOK = async (fileNameBase, testerName) => {
   const orderFileNames = await dataFileNames('orders');
   const orderExists = orderFileNames.some(fileName => fileName === `${fileNameBase}.json`);
