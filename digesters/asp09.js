@@ -1,6 +1,6 @@
 /*
   asp09
-  Creator of a query for asp09.html.
+  Creator of parameters for substitution into asp09.html.
 */
 exports.parameters = (report, query) => {
   // Makes strings HTML-safe.
@@ -11,26 +11,33 @@ exports.parameters = (report, query) => {
   // Newlines with indentations.
   const joiner = '\n      ';
   const innerJoiner = '\n        ';
+  // Create an HTML identification of the host report.
   const {acts, host, hostName, id, orderName} = report;
   const reportHostInfo = hostName ? `the <code>${hostName}</code> host report in ` : '';
   const reportInfo = `${reportHostInfo}the <code>${orderName || id}</code> report`;
-  // Creates messages about results of packaged tests.
+  // Creates a packaged-test success message.
   const packageSucceedText = package =>
     `<p>The page <strong>passed</strong> the <code>${package}</code> test.</p>`;
+  // Creates a packaged-test failure message.
   const packageFailText = (score, package, failures) =>
     `<p>The page <strong>did not pass</strong> the <code>${package}</code> test and received a score of ${score} on <code>${package}</code>. The details are in ${reportInfo}, in the section starting with <code>"which": "${package}"</code>. There was at least one failure of:</p>${joiner}<ul>${innerJoiner}${failures}${joiner}</ul>`;
-  // Creates messages about results of custom tests.
+  // Creates a custom-test success message.
   const customSucceedText =
     test => `<p>The page <strong>passed</strong> the <code>${test}</code> test.</p>`;
+  // Creates a custom-test failure message.
   const customFailText = (score, test) =>
     `<p>The page <strong>did not pass</strong> the <code>${test}</code> test and received a score of ${score} on <code>${test}</code>. The details are in ${reportInfo}, in the section starting with <code>"which": "${test}"</code>.</p>`;
+  // Creates a test unperformability message.
   const testCrashText = (score, test) => `<p>The <code>${test}</code> test could not be performed. The page received an inferred score of ${score} on <code>${test}</code>.</p>`;
+  // Creates the HTML items in a list of a custom test’s failures.
   const customFailures = failObj => Object
   .entries(failObj)
   .map(entry => `<li>${entry[0]}: ${entry[1]}</li>`)
   .join(innerJoiner);
+  // Creates an HTML summary of the details of a custom test’s failures.
   const customFailMore = failures =>
     `<p>Summary of the details:</p>${joiner}<ul>${innerJoiner}${failures}${joiner}</ul>`;
+  // Creates a combined HTML summary of a custom test’s failure result.
   const customResult = (score, test, failures) =>
     `${customFailText(score, test)}${joiner}${customFailMore(failures)}`;
   // Returns the act of a test.
@@ -43,7 +50,7 @@ exports.parameters = (report, query) => {
       return null;
     }
   };
-  // Get general data.
+  // Add the job data to the query.
   query.dateISO = report.endTime.slice(0, 10);
   query.dateSlash = query.dateISO.replace(/-/g, '/');
   query.reportInfo = reportInfo;
@@ -54,7 +61,7 @@ exports.parameters = (report, query) => {
   const {result} = scoreAct;
   const {inferences, scores} = result;
   query.totalScore = scores.total;
-  // Get summary-table data.
+  // Create rows of an HTML table of net scores.
   const netScores = Object.assign({}, scores, inferences);
   const scoreSources = Object.keys(netScores);
   query.scoreRows = scoreSources
