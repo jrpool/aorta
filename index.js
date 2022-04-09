@@ -54,14 +54,19 @@ const email = async (userName, subject, body) => {
   const userDataJSON = await fs.readFile(`data/users/${userName}.json`);
   const userData = JSON.parse(userDataJSON);
   const to = userData.email;
-  await transporter.sendMail({
-    from: process.env.MAIL_SENDER,
-    replyTo: process.env.REPLY_TO,
-    to,
-    subject,
-    text: body
-  });
-  console.log(`Email notice of report sent to ${userName}`);
+  if (transporter.host && transporter.port) {
+    await transporter.sendMail({
+      from: process.env.MAIL_SENDER,
+      replyTo: process.env.REPLY_TO,
+      to,
+      subject,
+      text: body
+    });
+    console.log(`Email notice of report sent to ${userName}`);
+  }
+  else {
+    console.log('No email notice sent');
+  }
 };
 // Sends stringifiable content as an API response.
 const sendAPI = async (content, response) => {
