@@ -11,6 +11,7 @@ node_modules/
 # Secrets
 .env.js
 data/*/*.json
+data/*/*.xml
 data/digests/*.html
 data/temp/
 
