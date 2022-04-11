@@ -15,6 +15,6 @@ data/digests/*.html
 data/temp/
 
 # Deployment configurations (comment out for the applicable deployment repository)
-jenkins/
-Dockerfile
-data/*/*.xml
+# jenkins/
+# Dockerfile
+# data/*/*.xml
