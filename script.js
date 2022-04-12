@@ -4,14 +4,10 @@
 */
 
 // Get any stored credentials.
-const storedUserName = localStorage.getItem('userName');
-const storedAuthCode = localStorage.getItem('authCode');
-// Populate the form with them.
-if (storedUserName) {
-  document.querySelector('input[name=userName]').value = storedUserName;
-}
-if (storedAuthCode) {
-  document.body.querySelector('input[name=authCode]').value = storedAuthCode;
+const storedID = localStorage.getItem('samlID');
+// Populate the form with it.
+if (storedID) {
+  document.querySelector('input[name=samlID]').value = storedID;
 }
 // When the form is submitted:
 document.body.querySelector('form').addEventListener('submit', () => {
