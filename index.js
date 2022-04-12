@@ -297,7 +297,7 @@ const userOK = async (userName, authCode, role) => {
   }
 };
 // Validates a web user, serves an error page if invalid, and returns the result.
-const screenWebUser = async (userName, authCode, role, context, response) => {
+const screenWebUser = async (role, context, response) => {
   const status = await userOK(userName, authCode, role);
   if (status.length) {
     const errorCode = status[0];
@@ -591,9 +591,7 @@ const requestHandler = (request, response) => {
       else if (requestURL === '/aorta/bulk') {
         const {bulk, userName, authCode} = bodyObject;
         // If the user exists and has permission for the action:
-        if (await screenWebUser(
-          userName, authCode, 'manage', 'receiving transfer request', response
-        )) {
+        if (await screenWebUser('manage', 'receiving transfer request', response)) {
           // If the user requested a transfer from Aorta:
           if (bulk === 'fromAorta') {
             // Assemble the data, excluding digests.

@@ -18,7 +18,8 @@
   },
   "homepage": "https://github.com/jrpool/aorta",
   "dependencies": {
-    "nodemailer": "*"
+    "nodemailer": "*",
+    "samlify": "*"
   },
   "devDependencies": {
     "eslint": "*"

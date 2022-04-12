@@ -1,0 +1,9 @@
+<samlp:AuthnRequest
+  xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+  ID="id62e17f76-f5f1-4d82-bf18-c966ca57c34c"
+  Version="2.0"
+  IssueInstant="2013-03-18T03:28:54.1839884Z"
+  xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+>
+  <Issuer xmlns="urn:oasis:names:tc:SAML:2.0:assertion">https://dev.digital-services.cvshealth.com/aorta/saml-metadata.xml</Issuer>
+</samlp:AuthnRequest>

@@ -17,6 +17,7 @@
       <h1>Aorta order creation</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
       <form action="/aorta/createOrder" method="post" class="flex">
+        <input type="hidden" name="samlID" value="__samlID__">
         <h2>Create an order</h2>
         <fieldset>
           <legend>Script</legend>
@@ -30,7 +31,6 @@
           </label></div>
           __batches__
         </fieldset>
-        __you__
         <p><button>Submit</button></p>
       </form>
     </main>

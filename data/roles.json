@@ -1,0 +1,44 @@
+{
+  "bradyr2@aetna.com": [
+    "order",
+    "assign",
+    "read"
+  ],
+  "holligere@aetna.com": [
+    "order",
+    "assign",
+    "read"
+  ],
+  "justin.knag@cvshealth.com": [
+    "order",
+    "assign",
+    "read"
+  ],
+  "mishrad6@aetna.com": [
+    "order",
+    "assign",
+    "read"
+  ],
+  "pashamm@aetna.com": [
+    "order",
+    "assign",
+    "read"
+  ],
+  "jonathan.pool@cvshealth.com": [
+    "manage",
+    "order",
+    "assign",
+    "read",
+    "test"
+  ],
+  "melissa.stegner@cvshealth.com": [
+    "order",
+    "assign",
+    "read"
+  ],
+  "tim.vang@cvshealth.com": [
+    "order",
+    "assign",
+    "read"
+  ]
+}

@@ -17,6 +17,7 @@
       <h1>Aorta job creation</h1>
       <p>Aorta: Automated Order Router for Tests of Accessibility.</p>
       <form action="/aorta/createJob" method="post" class="flex">
+        <input type="hidden" name="samlID" value="__samlID__">
         <h2>Create a job</h2>
         <fieldset>
           <legend>Order</legend>
@@ -26,7 +27,6 @@
           <legend>Tester</legend>
           __testers__
         </fieldset>
-        __you__
         <p><button>Submit</button></p>
       </form>
     </main>
