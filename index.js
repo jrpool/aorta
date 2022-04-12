@@ -249,7 +249,7 @@ const addYou = query => {
   query.you = youLines.join('\n');
 };
 // Returns whether a user exists and has a role, or why not.
-const userOK = async (userName, authCode, role) => {
+const userOK = async (role, samlID) => {
   const userFileNames = await dataFileNames('users');
   // If any users exist:
   if (userFileNames.length) {
@@ -296,20 +296,55 @@ const userOK = async (userName, authCode, role) => {
     return [];
   }
 };
+// Registers a new session with pending authentication.
+const addSession = async (url, sessions, id) => {
+  sessions[id] = {
+    idTime: nowString(),
+    url,
+    userEmail: ''
+  };
+  await fs.writeFile(('data/sessions.json', JSON.stringify(sessions, null, 2)));
+};
 // Validates a web user, serves an error page if invalid, and returns the result.
-const screenWebUser = async (role, context, response) => {
-  const status = await userOK(userName, authCode, role);
-  if (status.length) {
-    const errorCode = status[0];
-    let message = htmlErrorMessages[errorCode];
-    if (errorCode === 'role') {
-      message = message.replace('__role__', role);
+const screenWebUser = async (url, role, context, response, samlID = '') => {
+  // If a SAML ID was specified:
+  if (samlID) {
+    // Identify its user.
+    const sessionsJSON = await fs.readFile('data/sessions.json', 'utf8');
+    const sessions = JSON.parse(sessionsJSON);
+    const userEmail = sessions[samlID];
+    // If the identification succeeded:
+    if (userEmail) {
+      // Identify the user’s roles.
+      const rolesJSON = await fs.readFile('data/roles.json', 'utf8');
+      const roles = JSON.parse(rolesJSON);
+      const userRoles = roles[userEmail];
+      // Return the result.
+      if (userRoles) {
+        return userRoles.includes(role) ? {success: userEmail} : {failure: 'missingRole'};
+      }
+      else {
+        return {failure: 'nonUser'};
+      }
     }
-    await err(message, context, response, false);
-    return false;
+    // Otherwise, i.e. if the identification failed:
+    else {
+      // Authenticate the user.
+      const newID = await authenticate(response);
+      // Register a new session.
+      await addSession(url, sessions, newID);
+      // Return a status.
+      return {failure: 'reauthenticating'};
+    }
   }
+  // Otherwise, i.e. if no SAML ID was specified:
   else {
-    return true;
+    // Authenticate the user.
+    const newID = await demandAuthn(response);
+    // Register a new session.
+    await addSession(url, sessions, newID);
+    // Return a status.
+    return {failure: 'authenticating'};
   }
 };
 // Validates an API user, sends an error response if invalid, and returns the result.

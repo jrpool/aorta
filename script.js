@@ -3,23 +3,26 @@
   Aorta credential script.
 */
 
-// Get any stored credentials.
-const storedID = localStorage.getItem('samlID');
-// Populate the form with it.
-if (storedID) {
-  document.querySelector('input[name=samlID]').value = storedID;
+// Identify the element storing the SAML ID.
+const samlIDElement = document.getElementById('samlID');
+const pageID = samlIDElement.value;
+// If there is only a placeholder SAML ID on the page:
+if (pageID === '__samlID__') {
+  // Get the stored SAML ID.
+  const storedID = localStorage.getItem('samlID');
+  // If it exists:
+  if (storedID) {
+    // Make it the value of the SAML ID element.
+    samlIDElement.value = storedID;
+  }
+  // Otherwise, i.e. if no stored SAML ID exists either:
+  else {
+    // Remove the SAML ID element.
+    samlIDElement.remove();
+  }
 }
-// When the form is submitted:
-document.body.querySelector('form').addEventListener('submit', () => {
-  // Store the username and authorization code if different from those stored.
-  const userNameInput = document.querySelector('input[name=userName]');
-  const authCodeInput = document.querySelector('input[name=authCode]');
-  const userName = userNameInput ? userNameInput.value : '';
-  const authCode = authCodeInput ? authCodeInput.value : '';
-  if (userName && userName !== storedUserName) {
-    localStorage.setItem('userName', userName);
-  }
-  if (authCode && authCode !== storedAuthCode) {
-    localStorage.setItem('authCode', authCode);
-  }
-});
+// Otherwise, i.e. if there is a real SAML ID on the page:
+else if (pageID) {
+  // Update the stored SAML ID to it.
+  localStorage.setItem('samlID', pageID);
+}
