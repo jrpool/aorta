@@ -184,7 +184,7 @@ const getDataFileNames = async subdir => {
   const allFileNames = await fs.readdir(`data/${subdir}`);
   return allFileNames.filter(fileName => fileName !== 'README.md');
 };
-// Returns all scripts, batches, orders, jobs, testers, or reports, with 'id' properties.
+// Returns data on JSON-file targets, with 'id' properties.
 const getTargets = async targetType => {
   // For each target:
   const dir = targetStrings[targetType][1];
@@ -216,44 +216,39 @@ const toRadio = (targetType, target, radioName) => {
     details = `<strong>${target.id}</strong>: ${targetSpecs[targetType](target)}`;
   }
   const input = `<input type="radio" name="${radioName}" value="${value}" required>`;
+  return `<div><label>${input} ${details}</label></div>`;
+};
+// Returns a list item for a target.
+const toListItem = (targetType, target) => {
+  let mainPart, details;
+  if (targetType === 'user') {
+    mainPart = `<strong>${target}</strong>`;
+    details = '';
+  }
+  else {
+    mainPart = `<strong>${target.id}</strong>`;
+    details = `: ${targetSpecs[targetType](target)}`;
+  }
+  return `<li>${mainPart}${details}</li>`;
 };
 // Adds target radio buttons or list items to a query.
 const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
   const targets = [];
   // If the targets are users:
   if (targetType === 'user') {
-    // Add their elements to the query.
+    // Get an array of them.
     const usersJSON = await fs.readFile('data/users.json', 'utf8');
     const users = JSON.parse(usersJSON);
     targets.push(...Object.keys(users));
-
-    query[htmlKey] = targets.map(target => {
-      if (radioName) {
-        const input = `<input type="radio" name="${radioName}" value="${target}" required>`;
-        return `<div><label>${input} <strong>${target}</strong></label></div>`;
-      }
-      else {
-        return `<li><strong>${target}</strong></li>`;
-      }
-    })
-    .join('\n');
   }
   // Otherwise, i.e. if the targets are not users:
   else {
-    // Add their elements to the query.
+    // Get an array of them.
     targets.push(... await getTargets(targetType));
-    query[htmlKey] = targets.map(target => {
-      if (radioName) {
-        const input = `<input type="radio" name="${radioName}" value="${target.id}" required>`;
-        const specs = targetSpecs[targetType](target);
-        return `<div><label>${input} <strong>${target.id}</strong>: ${specs}</label></div>`;
-      }
-      else {
-        return `<li><strong>${target.id}</strong>: ${targetSpecs[targetType](target)}</li>`;
-      }
-    })
-    .join('\n');
   }
+  query[htmlKey] = targets.map(
+    target => radioName ? toRadio(targetType, target, radioName) : toListItem(targetType, target)
+  ).join('\n');
 };
 // Adds the digest HTML items to a query.
 const addQueryDigests = async query => {
