@@ -39,30 +39,64 @@ const roles = {
 };
 // Name of the sample script to be used as the initial value of a new script.
 const scriptInit = 'asp09';
+// Target-related placeholder replacements and directory names.
+const targetStrings = {
+  script: ['Scripts', 'scripts'],
+  batch: ['Batches', 'batches'],
+  order: ['Orders', 'orders'],
+  job: ['Jobs', 'jobs'],
+  report: ['Reports', 'reports'],
+  digest: ['Digests', 'digests'],
+  tester: ['Testers', 'testers']
+};
+// Target descriptions.
+const targetSpecs = {
+  script: target => target.what,
+  batch: target => target.what,
+  order: target => orderSpecs(target),
+  job: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
+  report: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
+  tester: target => target.name
+};
+// HTML error messages.
+const htmlErrorMessages = {
+  badAuthCode: 'Incorrect username or authorization code.',
+  badUserName: 'Incorrect username or authorization code.',
+  noAuthCode: 'Authorization code missing.',
+  noUserName: 'Username missing.',
+  role: 'You do not have <q>__role__</q> permission.'
+};
+// API error messages.
+const apiErrorMessages = {
+  badAuthCode: 'badCredentials',
+  badUserName: 'badCredentials',
+  noAuthCode: 'noAuthCode',
+  noUserName: 'noUserName',
+  role: 'role'
+};
+// Pending authentication requests.
+const samlRequests = {};
+// Current sessions.
+const sessions = {};
 
 // ########## FUNCTIONS
 
-// ==== OPERATION UTILITIES ====
-
 // Sends an email message to a user.
-const email = async (userName, subject, body) => {
+const sendEmail = async (to, subject, text) => {
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_SERVER,
     port: process.env.SMTP_PORT,
     secure: false
   });
-  const userDataJSON = await fs.readFile(`data/users/${userName}.json`);
-  const userData = JSON.parse(userDataJSON);
-  const to = userData.email;
   if (transporter.host && transporter.port) {
-    await transporter.sendMail({
+    transporter.sendMail({
       from: process.env.MAIL_SENDER,
       replyTo: process.env.REPLY_TO,
       to,
       subject,
-      text: body
+      text
     });
-    console.log(`Email notice of report sent to ${userName}`);
+    console.log(`Email notice of report sent to ${address}`);
   }
   else {
     console.log('No email notice sent');
@@ -109,8 +143,8 @@ const serveAttachment = async (content, saveName, contentType, response) => {
   response.setHeader('Content-Disposition', `attachment; filename="${saveName}"`);
   response.end(content);
 };
-// Processes a thrown error.
-const err = async (error, context, response, isAPI = false) => {
+// Serves an error page or logs an error.
+const serveError = async (error, context, response, isAPI = false) => {
   let problem = error;
   // If the error is system-defined:
   if (typeof error !== 'string') {
@@ -138,54 +172,19 @@ const err = async (error, context, response, isAPI = false) => {
   }
   return '';
 };
-
-// ==== REQUEST-PROCESSING UTILITIES ====
-
 // Returns an order description.
-const orderSpecs = order => {
-  const mainPart = `from <strong>${order.userName}</strong>, script <strong>${order.scriptName}</strong>`;
-  const batchPart = order.batchName ? `, batch <strong>${order.batchName}</strong>` : '';
+const getOrderSpecs = order => {
+  const {creator, scriptName, batchName} = order;
+  const mainPart = `from <strong>${creator}</strong>, script <strong>${scriptName}</strong>`;
+  const batchPart = batchName ? `, batch <strong>${batchName}</strong>` : '';
   return `${mainPart}${batchPart}`;
 };
-const targetStrings = {
-  script: ['Scripts', 'scripts'],
-  batch: ['Batches', 'batches'],
-  order: ['Orders', 'orders'],
-  job: ['Jobs', 'jobs'],
-  report: ['Reports', 'reports'],
-  digest: ['Digests', 'digests'],
-  user: ['Users', 'users'],
-  tester: ['Testers', 'users']
-};
-const targetSpecs = {
-  script: target => target.what,
-  batch: target => target.what,
-  order: target => orderSpecs(target),
-  job: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
-  report: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
-  user: target => target.name,
-  tester: target => target.name
-};
-const htmlErrorMessages = {
-  badAuthCode: 'Incorrect username or authorization code.',
-  badUserName: 'Incorrect username or authorization code.',
-  noAuthCode: 'Authorization code missing.',
-  noUserName: 'Username missing.',
-  role: 'You do not have <q>__role__</q> permission.'
-};
-const apiErrorMessages = {
-  badAuthCode: 'badCredentials',
-  badUserName: 'badCredentials',
-  noAuthCode: 'noAuthCode',
-  noUserName: 'noUserName',
-  role: 'role'
-};
-// Get an array of the names of the non-README files in a subdirectory of 'data'.
-const dataFileNames = async subdir => {
+// Returns an array of the names of the non-README files in a subdirectory of 'data'.
+const getDataFileNames = async subdir => {
   const allFileNames = await fs.readdir(`data/${subdir}`);
   return allFileNames.filter(fileName => fileName !== 'README.md');
 };
-// Get an array of ID-equipped scripts, batches, orders, jobs, users, testers, or reports.
+// Returns all scripts, batches, orders, jobs, testers, or reports, with 'id' properties.
 const getTargets = async targetType => {
   // For each target:
   const dir = targetStrings[targetType][1];
@@ -195,34 +194,66 @@ const getTargets = async targetType => {
     // Get it.
     const targetJSON = await fs.readFile(`data/${dir}/${fileName}`);
     const target = JSON.parse(targetJSON);
-    // If the target is valid:
-    if (targetType !== 'tester' || target.roles.includes('test')) {
-      // If the target has no 'id' property (i.e. is a script or batch):
-      if (! target.id) {
-        // Use its filename base as an 'id' property.
-        target.id = fileName.slice(0, -5);
-      }
-      // Add the target to the array of targets.
-      targets.push(target);
+    // If the target has no 'id' property (i.e. is a script or batch):
+    if (! target.id) {
+      // Use its filename base as an 'id' property.
+      target.id = fileName.slice(0, -5);
     }
+    // Add the target to the array of targets.
+    targets.push(target);
   }
   return targets;
 };
-// Adds the script, batch, order, job, user, tester, or report HTML items to a query.
+// Returns a radio-button form control for a target.
+const toRadio = (targetType, target, radioName) => {
+  let value, details;
+  if (targetType === 'user') {
+    value = target;
+    details = `<strong>${target}</strong>`;
+  }
+  else {
+    value = target.id;
+    details = `<strong>${target.id}</strong>: ${targetSpecs[targetType](target)}`;
+  }
+  const input = `<input type="radio" name="${radioName}" value="${value}" required>`;
+};
+// Adds target radio buttons or list items to a query.
 const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
-  const targets = await getTargets(targetType);
-  // Add the target items as a parameter to the query.
-  query[htmlKey] = targets.map(target => {
-    if (radioName) {
-      const input = `<input type="radio" name="${radioName}" value="${target.id}" required>`;
-      const specs = targetSpecs[targetType](target);
-      return `<div><label>${input} <strong>${target.id}</strong>: ${specs}</label></div>`;
-    }
-    else {
-      return `<li><strong>${target.id}</strong>: ${targetSpecs[targetType](target)}</li>`;
-    }
-  })
-  .join('\n');
+  const targets = [];
+  // If the targets are users:
+  if (targetType === 'user') {
+    // Add their elements to the query.
+    const usersJSON = await fs.readFile('data/users.json', 'utf8');
+    const users = JSON.parse(usersJSON);
+    targets.push(...Object.keys(users));
+
+    query[htmlKey] = targets.map(target => {
+      if (radioName) {
+        const input = `<input type="radio" name="${radioName}" value="${target}" required>`;
+        return `<div><label>${input} <strong>${target}</strong></label></div>`;
+      }
+      else {
+        return `<li><strong>${target}</strong></li>`;
+      }
+    })
+    .join('\n');
+  }
+  // Otherwise, i.e. if the targets are not users:
+  else {
+    // Add their elements to the query.
+    targets.push(... await getTargets(targetType));
+    query[htmlKey] = targets.map(target => {
+      if (radioName) {
+        const input = `<input type="radio" name="${radioName}" value="${target.id}" required>`;
+        const specs = targetSpecs[targetType](target);
+        return `<div><label>${input} <strong>${target.id}</strong>: ${specs}</label></div>`;
+      }
+      else {
+        return `<li><strong>${target.id}</strong>: ${targetSpecs[targetType](target)}</li>`;
+      }
+    })
+    .join('\n');
+  }
 };
 // Adds the digest HTML items to a query.
 const addQueryDigests = async query => {
@@ -297,16 +328,17 @@ const userOK = async (role, samlID) => {
   }
 };
 // Registers a new session with pending authentication.
-const addSession = async (url, sessions, id) => {
+const addSession = async (url, body, id) => {
   sessions[id] = {
     idTime: nowString(),
     url,
+    body,
     userEmail: ''
   };
   await fs.writeFile(('data/sessions.json', JSON.stringify(sessions, null, 2)));
 };
 // Validates a web user, serves an error page if invalid, and returns the result.
-const screenWebUser = async (url, role, context, response, samlID = '') => {
+const screenWebUser = async (url, body, role, context, response, samlID = '') => {
   // If a SAML ID was specified:
   if (samlID) {
     // Identify its user.
@@ -332,7 +364,7 @@ const screenWebUser = async (url, role, context, response, samlID = '') => {
       // Authenticate the user.
       const newID = await authenticate(response);
       // Register a new session.
-      await addSession(url, sessions, newID);
+      await addSession(url, body, sessions, newID);
       // Return a status.
       return {failure: 'reauthenticating'};
     }
@@ -340,9 +372,9 @@ const screenWebUser = async (url, role, context, response, samlID = '') => {
   // Otherwise, i.e. if no SAML ID was specified:
   else {
     // Authenticate the user.
-    const newID = await demandAuthn(response);
+    const newID = await authenticate(response);
     // Register a new session.
-    await addSession(url, sessions, newID);
+    await addSession(url, body, sessions, newID);
     // Return a status.
     return {failure: 'authenticating'};
   }
