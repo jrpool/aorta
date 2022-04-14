@@ -49,13 +49,19 @@ const targetStrings = {
   digest: ['Digests', 'digests'],
   tester: ['Testers', 'testers']
 };
-// Target descriptions.
+// Target-description functions for all target types.
 const targetSpecs = {
+  // Function of the target or its name, returning an HTML (possibly only text) description.
   script: target => target.what,
   batch: target => target.what,
-  order: target => orderSpecs(target),
-  job: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
-  report: target => `${orderSpecs(target)}, tester <strong>${target.tester}</strong>`,
+  order: target => describeOrder(target),
+  job: target => `${describeOrder(target)}, tester <strong>${target.tester}</strong>`,
+  report: target => `${describeOrder(target)}, tester <strong>${target.tester}</strong>`,
+  digest: async targetName => {
+    const reportJSON = await fs.readFile(`data/reports/${targetName}.json`, 'utf8');
+    const report = JSON.parse(reportJSON);
+    return targetSpecs.report(report);
+  },
   tester: target => target.name
 };
 // HTML error messages.
@@ -172,8 +178,8 @@ const serveError = async (error, context, response, isAPI = false) => {
   }
   return '';
 };
-// Returns an order description.
-const getOrderSpecs = order => {
+// Returns an HTML description of an order, job, or report.
+const describeOrder = order => {
   const {creator, scriptName, batchName} = order;
   const mainPart = `from <strong>${creator}</strong>, script <strong>${scriptName}</strong>`;
   const batchPart = batchName ? `, batch <strong>${batchName}</strong>` : '';
@@ -184,12 +190,26 @@ const getDataFileNames = async subdir => {
   const allFileNames = await fs.readdir(`data/${subdir}`);
   return allFileNames.filter(fileName => fileName !== 'README.md');
 };
-// Returns data on JSON-file targets, with 'id' properties.
+// Returns data on targets, with 'id' properties.
 const getTargets = async targetType => {
+  const targets = [];
+  // If the target type is user:
+  if (targetType === 'user') {
+    // Return the users as objects, with 'id' properties.
+    const usersJSON = await fs.readFile('data/users.json', 'utf8');
+    const users = JSON.parse(usersJSON);
+    targets.push(... Object.keys(users).map(id => ({
+      id,
+      roles: users[id]
+    })));
+  }
+  // Otherwise, if the target type is digest:
+  else if (targetType === 'digest') {
+    
+  }
   // For each target:
   const dir = targetStrings[targetType][1];
   const fileNames = await dataFileNames(dir);
-  const targets = [];
   for (const fileName of fileNames) {
     // Get it.
     const targetJSON = await fs.readFile(`data/${dir}/${fileName}`);
