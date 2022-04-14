@@ -190,14 +190,18 @@ const getDataFileNames = async subdir => {
   const allFileNames = await fs.readdir(`data/${subdir}`);
   return allFileNames.filter(fileName => fileName !== 'README.md');
 };
+// Returns data on the users.
+const getUsers = async () => {
+  const usersJSON = await fs.readFile('data/users.json', 'utf8');
+  return JSON.parse(usersJSON);
+}
 // Returns data on targets, with 'id' properties.
 const getTargets = async targetType => {
   const targets = [];
   // If the target type is user:
   if (targetType === 'user') {
-    // Return the users as objects, with 'id' properties.
-    const usersJSON = await fs.readFile('data/users.json', 'utf8');
-    const users = JSON.parse(usersJSON);
+    // Add the users as objects, with 'id' properties, to the array of targets.
+    const users = await getUsers();
     targets.push(... Object.keys(users).map(id => ({
       id,
       roles: users[id]
@@ -205,38 +209,48 @@ const getTargets = async targetType => {
   }
   // Otherwise, if the target type is digest:
   else if (targetType === 'digest') {
-    
-  }
-  // For each target:
-  const dir = targetStrings[targetType][1];
-  const fileNames = await dataFileNames(dir);
-  for (const fileName of fileNames) {
-    // Get it.
-    const targetJSON = await fs.readFile(`data/${dir}/${fileName}`);
-    const target = JSON.parse(targetJSON);
-    // If the target has no 'id' property (i.e. is a script or batch):
-    if (! target.id) {
-      // Use its filename base as an 'id' property.
-      target.id = fileName.slice(0, -5);
+    // Add the reports they are derived from, with 'id' properties, to the array of targets.
+    const fileNames = await dataFileNames('digest');
+    for (const fileName of fileNames) {
+      const reportJSON = await fs.readFile(`data/reports/${fileName}.json`, 'utf8');
+      const report = JSON.parse(reportJSON);
+      targets.push(report);
     }
-    // Add the target to the array of targets.
-    targets.push(target);
   }
+  // Otherwise, i.e. if the target type is script, batch, order, or report:
+  else {
+    // For each target:
+    const dir = targetStrings[targetType][1];
+    const fileNames = await dataFileNames(dir);
+    for (const fileName of fileNames) {
+      // Get it.
+      const targetJSON = await fs.readFile(`data/${dir}/${fileName}`);
+      const target = JSON.parse(targetJSON);
+      // If the target has no 'id' property (i.e. is a script or batch):
+      if (! target.id) {
+        // Use its filename base as an 'id' property.
+        target.id = fileName.slice(0, -5);
+      }
+      // Add the target to the array of targets.
+      targets.push(target);
+    }
+  }
+  // Return the array of targets.
   return targets;
 };
 // Returns a radio-button form control for a target.
 const toRadio = (targetType, target, radioName) => {
-  let value, details;
+  let value, labeler;
   if (targetType === 'user') {
     value = target;
-    details = `<strong>${target}</strong>`;
+    labeler = `<strong>${target}</strong>`;
   }
   else {
     value = target.id;
-    details = `<strong>${target.id}</strong>: ${targetSpecs[targetType](target)}`;
+    labeler = `<strong>${target.id}</strong>: ${await targetSpecs[targetType](target)}`;
   }
   const input = `<input type="radio" name="${radioName}" value="${value}" required>`;
-  return `<div><label>${input} ${details}</label></div>`;
+  return `<div><label>${input} ${labeler}</label></div>`;
 };
 // Returns a list item for a target.
 const toListItem = (targetType, target) => {
@@ -253,93 +267,33 @@ const toListItem = (targetType, target) => {
 };
 // Adds target radio buttons or list items to a query.
 const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
-  const targets = [];
-  // If the targets are users:
-  if (targetType === 'user') {
-    // Get an array of them.
-    const usersJSON = await fs.readFile('data/users.json', 'utf8');
-    const users = JSON.parse(usersJSON);
-    targets.push(...Object.keys(users));
-  }
-  // Otherwise, i.e. if the targets are not users:
-  else {
-    // Get an array of them.
-    targets.push(... await getTargets(targetType));
-  }
+  // Add a concatenation of HTML items for the targets of the specified type to the query.
+  const targets = await getTargets(targetType);
   query[htmlKey] = targets.map(
     target => radioName ? toRadio(targetType, target, radioName) : toListItem(targetType, target)
   ).join('\n');
 };
-// Adds the digest HTML items to a query.
-const addQueryDigests = async query => {
-  const digestFileNames = await dataFileNames('digests');
-  const digestNames = digestFileNames.map(fileName => fileName.slice(0, -5));
-  query.targets = digestNames.map(digestName => {
-    const input
-      = `<input type="radio" name="targetName" value="${digestName}" required>`;
-    return `<div><label>${input} <strong>${digestName}</strong></label></div>`;
-  })
-  .join('\n');
-};
-// Adds a credential field set to a query.
-const addYou = query => {
-  const youLines = [
-    '<fieldset>',
-    '<legend>',
-    'You',
-    '</legend>',
-    '<div><label>Username <input name="userName" size="10" required></label></div>',
-    '<div><label>Authorization code <input type="password" name="authCode" size="10" required></label></div>',
-    '</fieldset>'
-  ];
-  query.you = youLines.join('\n');
-};
 // Returns whether a user exists and has a role, or why not.
-const userOK = async (role, samlID) => {
-  const userFileNames = await dataFileNames('users');
-  // If any users exist:
-  if (userFileNames.length) {
-    // If a user name was specified:
-    if (userName) {
-      // If it is an existing user name:
-      const userIndex = userFileNames.findIndex(fileName => fileName === `${userName}.json`);
-      if (userIndex > -1) {
-        // Get data on the user.
-        const userJSON = await fs.readFile(`data/users/${userFileNames[userIndex]}`, 'utf8');
-        const user = JSON.parse(userJSON);
-        // If an authorization code was specified:
-        if (authCode) {
-          // If it is correct:
-          if (authCode === user.authCode) {
-            // If no role is required or the user has the specified role:
-            if (! role || user.roles.includes(role)) {
-              // Return success.
-              return [];
-            }
-            else {
-              return ['role', role];
-            }
-          }
-          else {
-            return ['badAuthCode'];
-          }
-        }
-        else{
-          return ['noAuthCode'];
-        }
-      }
-      else {
-        return ['badUserName'];
-      }
+const isRoleUser = async (role, userEmail) => {
+  // If the specified user is known:
+  const users = await getUsers();
+  const user = users[userEmail];
+  if (user) {
+    // If it has the specified role:
+    if (user.roles.includes(role)) {
+      // Return success.
+      return '';
     }
+    // Otherwise, i.e. if it does not have the specified role:
     else {
-      return ['noUserName'];
+      // Return the failure reason.
+      return 'noRole';
     }
   }
-  // Otherwise, i.e. if no users exist yet:
+  // Otherwise, i.e. if the user is not known:
   else {
-    // Return success.
-    return [];
+    // Return the failure reason.e
+    return 'noUser';
   }
 };
 // Registers a new session with pending authentication.
