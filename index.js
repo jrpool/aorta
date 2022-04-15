@@ -9,6 +9,8 @@
 const fs = require('fs').promises;
 const {readFileSync} = require('fs');
 const nodemailer = require('nodemailer');
+// Module to encode to Base64.
+const zlib = require('zlib');
 // Environment variables
 try {
   const {env} = require('./.env');
@@ -36,6 +38,12 @@ const roles = {
   report: ['read', 'test', 'manage'],
   digest: ['read', 'read', 'manage'],
   user: ['manage', 'manage', 'manage']
+};
+// Tester role requirements.
+const testerRoles = {
+  claimOrder: 'test',
+  assignOrder: 'assign',
+  createReport: 'test'
 };
 // Name of the sample script to be used as the initial value of a new script.
 const scriptInit = 'asp09';
@@ -80,10 +88,26 @@ const apiErrorMessages = {
   noUserName: 'noUserName',
   role: 'role'
 };
-// Pending authentication requests.
-const samlRequests = {};
 // Current sessions.
 const sessions = {};
+// Authentication request start and end.
+const authnRequestStart = [
+  '<samlp:AuthnRequest',
+    'xmlns="urn:oasis:names:tc:SAML:2.0:metadata"',
+    'ID='
+].join('');
+const authnRequestEnd = [
+    'Version="2.0"',
+    'IssueInstant="2013-03-18T03:28:54.1839884Z"',
+    'xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"',
+  '>',
+    '<Issuer xmlns="urn:oasis:names:tc:SAML:2.0:assertion">',
+      'https://dev.digital-services.cvshealth.com/aorta/saml-metadata.xml',
+    '</Issuer>',
+  '</samlp:AuthnRequest>'
+].join('');
+// SAML identity provider.
+const samlIP = 'https://login.microsoftonline.com/fabb61b8-3afe-4e75-b934-a47f782b8cd7/saml2';
 
 // ########## FUNCTIONS
 
@@ -148,6 +172,12 @@ const serveAttachment = async (content, saveName, contentType, response) => {
   response.setHeader('Content-Type', contentType);
   response.setHeader('Content-Disposition', `attachment; filename="${saveName}"`);
   response.end(content);
+};
+// Redirects a user agent to a URL.
+const redirect = async (url, response) => {
+  response.setHeader('Location', url);
+  response.statusCode = 303;
+  await response.end();
 };
 // Serves an error page or logs an error.
 const serveError = async (error, context, response, isAPI = false) => {
@@ -217,7 +247,7 @@ const getTargets = async targetType => {
       targets.push(report);
     }
   }
-  // Otherwise, i.e. if the target type is script, batch, order, or report:
+  // Otherwise, i.e. if the target type is script, batch, order, report, or tester:
   else {
     // For each target:
     const dir = targetStrings[targetType][1];
@@ -273,102 +303,109 @@ const addQueryTargets = async (query, targetType, htmlKey, radioName) => {
     target => radioName ? toRadio(targetType, target, radioName) : toListItem(targetType, target)
   ).join('\n');
 };
-// Returns whether a user exists and has a role, or why not.
-const isRoleUser = async (role, userEmail) => {
-  // If the specified user is known:
-  const users = await getUsers();
-  const user = users[userEmail];
-  if (user) {
-    // If it has the specified role:
-    if (user.roles.includes(role)) {
-      // Return success.
-      return '';
-    }
-    // Otherwise, i.e. if it does not have the specified role:
-    else {
-      // Return the failure reason.
-      return 'noRole';
-    }
-  }
-  // Otherwise, i.e. if the user is not known:
-  else {
-    // Return the failure reason.e
-    return 'noUser';
-  }
-};
-// Registers a new session with pending authentication.
-const addSession = async (url, body, id) => {
-  sessions[id] = {
-    idTime: nowString(),
-    url,
+// Creates a session.
+const addSession = (path, body, samlID) => {
+  const now = nowString();
+  sessions[samlID] = {
+    startTime: now,
+    lastTime: now,
+    path,
     body,
     userEmail: ''
   };
-  await fs.writeFile(('data/sessions.json', JSON.stringify(sessions, null, 2)));
 };
-// Validates a web user, serves an error page if invalid, and returns the result.
-const screenWebUser = async (url, body, role, context, response, samlID = '') => {
+// Create a session and initiate authentication for it.
+const startSession = async (path, body, response) => {
+  // Create a new SAML ID.
+  const newID = `id${crypto.randomUUID()}`;
+  // Create a session for it.
+  addSession(path, body, newID);
+  // Compile an authentication request for the SAML ID.
+  const authnRequest = `${authnRequestStart}"${newID}"${authnRequestEnd}`;
+  // Deflate the request.
+  const deflatedRequest = zlib.deflateRawSync(authnRequest);
+  // Encode the deflated request to Base64.
+  const b64Request = Buffer.from(deflatedRequest).toString('base64');
+  /*
+    URL-encode the Base64-encoded request, using encodeURIComponent, because it is identical to URL
+    encoding for the set of characters that can exist in a Base64 encoding. The Base64 encoding
+    performed by Buffer contains only alphanumerics and ['-', '_', '+', '/', '=']. Of these, only
+    ['+', '/', '='] need URL encoding.
+  */
+  const urlEncodedRequest = encodeURIComponent(b64Request);
+  // Redirect the user to the SAML identity provider.
+  const redirectURL = `${samlIP}?SAMLRequest=${urlEncodedRequest}`;
+  await redirect(redirectURL, response);
+}
+// Checks a user’s authorization or, if necessary, initiates user authentication.
+const screenUser = async (path, body, role, response, samlID = '') => {
   // If a SAML ID was specified:
   if (samlID) {
-    // Identify its user.
-    const sessionsJSON = await fs.readFile('data/sessions.json', 'utf8');
-    const sessions = JSON.parse(sessionsJSON);
-    const userEmail = sessions[samlID];
-    // If the identification succeeded:
-    if (userEmail) {
-      // Identify the user’s roles.
-      const rolesJSON = await fs.readFile('data/roles.json', 'utf8');
-      const roles = JSON.parse(rolesJSON);
-      const userRoles = roles[userEmail];
-      // Return the result.
-      if (userRoles) {
-        return userRoles.includes(role) ? {success: userEmail} : {failure: 'missingRole'};
+    // If it has a session:
+    const session = sessions[samlID];
+    if (session) {
+      // If the session’s user is known:
+      const {userEmail} = session;
+      if (userEmail) {
+        // Identify the user’s roles.
+        const rolesJSON = await fs.readFile('data/roles.json', 'utf8');
+        const roles = JSON.parse(rolesJSON);
+        const userRoles = roles[userEmail];
+        // Return whether the user has the required role.
+        return userRoles.includes(role) ? {success: userEmail} : {missingRole: userEmail};
       }
+      // Otherwise, i.e. if the session’s user is unknown:
       else {
-        return {failure: 'nonUser'};
+        // Return an error message.
+        return {failure: 'sessionDataIncomplete'};
       }
     }
-    // Otherwise, i.e. if the identification failed:
+    // Otherwise, i.e. if the SAML ID’s session does not (any longer) exist:
     else {
-      // Authenticate the user.
-      const newID = await authenticate(response);
-      // Register a new session.
-      await addSession(url, body, sessions, newID);
+      // Create a new session with a new ID and redirect the user to the identity provider.
+      await startSession(path, body, response);
       // Return a status.
       return {failure: 'reauthenticating'};
     }
   }
   // Otherwise, i.e. if no SAML ID was specified:
   else {
-    // Authenticate the user.
-    const newID = await authenticate(response);
-    // Register a new session.
-    await addSession(url, body, sessions, newID);
+    // Create a new session with a new ID and redirect the user to the identity provider.
+    await startSession(path, body, response);
     // Return a status.
     return {failure: 'authenticating'};
   }
 };
-// Validates an API user, sends an error response if invalid, and returns the result.
-const screenAPIUser = async (what, userName, authCode, response) => {
-  let role = '';
-  if (what === 'claimOrder') {
-    role = 'test';
+// Checks a tester’s authorization.
+const screenTester = async (what, id, authCode) => {
+  const requiredRole = testerRoles[what] || '';
+  // If the tester exists:
+  const testerJSON = await fs.readFile(`data/testers/${id}.json`, 'utf8');
+  const tester = JSON.parse(testerJSON);
+  if (tester) {
+    // If the authorization code is correct:
+    if (authCode === tester.authCode) {
+      // If it has the specified role:
+      if (tester.roles.includes(requiredRole)) {
+        // Return success.
+        return '';
+      }
+      // Otherwise, i.e. if it does not have the specified role:
+      else {
+        // Return the failure reason.
+        return 'noRole';
+      }
+    }
+    // Otherwise, i.e. if the authorization code is incorrect:
+    else {
+      // Return the failure reason.
+      return 'badCredential';
+    }
   }
-  else if (what === 'assignOrder') {
-    role = 'assign'
-  }
-  else if (what === 'createReport') {
-    role = 'test'
-  }
-  const status = await userOK(userName, authCode, role);
-  if (status.length) {
-    const errorCode = status[0];
-    let message = apiErrorMessages[errorCode];
-    await sendAPI({error: message}, response);
-    return false;
-  }
+  // Otherwise, i.e. if the tester does not exist:
   else {
-    return true;
+    // Return the failure reason.
+    return 'badCredential';
   }
 };
 // Returns a string representing the date and time.
@@ -396,13 +433,13 @@ const writeOrder = async (userName, options, response) => {
     'ack', {message: `Successfully created order <strong>${id}</strong>.`}, response
   );
 };
-// Validates an existing or proposed job and returns success or a reason for failure.
-const jobOK = async (fileNameBase, testerName) => {
+// Validates an existing or proposed job and returns success or a failure reason.
+const jobOK = async (orderID, testerID) => {
   const orderFileNames = await dataFileNames('orders');
-  const orderExists = orderFileNames.some(fileName => fileName === `${fileNameBase}.json`);
+  const orderExists = orderFileNames.some(fileName => fileName === `${orderID}.json`);
   if (orderExists) {
     const userFileNames = await dataFileNames('users');
-    const userExists = userFileNames.some(fileName => fileName === `${testerName}.json`);
+    const userExists = userFileNames.some(fileName => fileName === `${testerID}.json`);
     if (userExists) {
       const userJSON = await fs.readFile(`data/users/${testerName}.json`, 'utf8');
       const user = JSON.parse(userJSON);
@@ -442,9 +479,9 @@ const reportOK = async (reportJSON, userName) => {
   }
 };
 // Assigns an order to a tester, creating a job.
-const writeJob = async (assignedBy, fileNameBase, testerName) => {
+const writeJob = async (assignedBy, id, testerName) => {
   // Get the order.
-  const orderJSON = await fs.readFile(`data/orders/${fileNameBase}.json`, 'utf8');
+  const orderJSON = await fs.readFile(`data/orders/${id}.json`, 'utf8');
   const order = JSON.parse(orderJSON);
   // Add assignment facts to it.
   order.assignedBy = assignedBy;
@@ -454,14 +491,14 @@ const writeJob = async (assignedBy, fileNameBase, testerName) => {
   order.log = [];
   order.reports = [];
   // Write it as a job, to be used as a Testaro options object in handleRequest().
-  await fs.writeFile(`data/jobs/${fileNameBase}.json`, JSON.stringify(order, null, 2));
+  await fs.writeFile(`data/jobs/${id}.json`, JSON.stringify(order, null, 2));
   // Delete it as an order.
-  await fs.unlink(`data/orders/${fileNameBase}.json`);
+  await fs.unlink(`data/orders/${id}.json`);
 };
 // Gets the content of a script or batch.
-const getOrderPart = async (fileNameBase, partDir) => {
+const getOrderPart = async (id, dir) => {
   try {
-    const partJSON = await fs.readFile(`data/${partDir}/${fileNameBase}.json`, 'utf8');
+    const partJSON = await fs.readFile(`data/${dir}/${id}.json`, 'utf8');
     const content = JSON.parse(partJSON);
     return content;
   }
@@ -499,13 +536,11 @@ const requestHandler = (request, response) => {
       }
       // Otherwise, if it is the actions page:
       else if (requestURL === '/aorta/actions') {
-        addYou(query);
         // Serve it.
         await render('actions', query, response);
       }
       // Otherwise, if it is the bulk page:
       else if (requestURL === '/aorta/bulk') {
-        addYou(query);
         // Serve it.
         await render('bulk', query, response);
       }
@@ -535,16 +570,17 @@ const requestHandler = (request, response) => {
         err(`Invalid request ${requestURL}`, 'processing request', response);
       }
     }
-    // METHOD POST: Otherwise, if the request submits a form:
+    // METHOD POST: Otherwise, if the request transmits a body:
     else if (method === 'POST') {
       // Get the data.
       const body = Buffer.concat(bodyParts).toString();
       const bodyObject = requestURL === '/aorta/api' ? JSON.parse(body) : parse(body);
-      // If it is an API request:
+      // If it is an API (i.e. tester) request:
       if (requestURL === '/aorta/api') {
-        const {what, userName, authCode} = bodyObject;
-        // If the user exists and is authorized to make the request:
-        if (await screenAPIUser(what, userName, authCode, response)) {
+        const {what, id, authCode, orderID} = bodyObject;
+        // If the tester exists and is authorized to make the request:
+        const authStatus = await screenTester(what, id, authCode, response);
+        if (! authStatus) {
           // If the request is to see the orders:
           if (what === 'seeOrders') {
             // Get them.
@@ -563,8 +599,7 @@ const requestHandler = (request, response) => {
           // Otherwise, if the request is to create a job assigned to the requester:
           else if (what === 'claimOrder') {
             // If the request is valid:
-            const {orderName} = bodyObject;
-            const jobError = await jobOK(orderName, userName);
+            const jobError = await jobOK(orderID, id);
             if (jobError) {
               await sendAPI({error: jobError}, response);
             }
