@@ -717,7 +717,9 @@ const requestHandler = (request, response) => {
                   .map(fileName => fileName.slice(0, -3));
                   const reports = await getTargets('report');
                   const noBatchReports = reports
-                  .filter(report => ! report.batchName && digesterNames.includes(report.scriptName));
+                  .filter(
+                    report => ! report.batchName && digesterNames.includes(report.scriptName)
+                  );
                   const batchReports = reports
                   .filter(report => report.batchName && digesterNames.includes(report.scriptName));
                   // Add the no-batch reports as a parameter to the query.
